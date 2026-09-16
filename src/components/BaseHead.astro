@@ -32,6 +32,13 @@ const { title, description, image = FallbackImage } = Astro.props;
 />
 <meta name="generator" content={Astro.generator} />
 
+<script is:inline>
+	const savedTheme = localStorage.getItem('theme');
+	if (savedTheme === 'light' || savedTheme === 'dark') {
+		document.documentElement.dataset.theme = savedTheme;
+	}
+</script>
+
 <Font cssVariable="--font-atkinson" preload />
 
 <!-- Canonical URL -->

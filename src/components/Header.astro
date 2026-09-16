@@ -11,6 +11,16 @@ import HeaderLink from './HeaderLink.astro';
 			<HeaderLink href="/blog">Blog</HeaderLink>
 			<HeaderLink href="/about">About</HeaderLink>
 		</div>
+		<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode">
+			<svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+				<circle cx="12" cy="12" r="4"></circle>
+				<path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"></path>
+			</svg>
+			<svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+				<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"></path>
+			</svg>
+			<span class="sr-only" data-theme-label>Switch to dark mode</span>
+		</button>
 		<div class="social-links">
 			<a href="https://m.webtoo.ls/@astro" target="_blank">
 				<span class="sr-only">Follow Astro on Mastodon</span>
@@ -65,13 +75,45 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	nav a {
 		padding: 1em 0.5em;
-		color: var(--black);
+		color: rgb(var(--black));
 		border-bottom: 4px solid transparent;
 		text-decoration: none;
 	}
 	nav a.active {
 		text-decoration: none;
 		border-bottom-color: var(--accent);
+	}
+	.theme-toggle {
+		display: grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+		margin-left: auto;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 50%;
+		background: var(--surface);
+		color: rgb(var(--black));
+		cursor: pointer;
+	}
+	.theme-toggle:hover,
+	.theme-toggle:focus-visible {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+	.theme-toggle svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		stroke-width: 2;
+	}
+	.moon-icon,
+	:root[data-theme='dark'] .sun-icon {
+		display: none;
+	}
+	:root[data-theme='dark'] .moon-icon {
+		display: block;
 	}
 	.social-links,
 	.social-links a {
@@ -83,3 +125,26 @@ import HeaderLink from './HeaderLink.astro';
 		}
 	}
 </style>
+<script>
+	const themeToggle = document.querySelector('[data-theme-toggle]');
+	const themeLabel = document.querySelector('[data-theme-label]');
+
+	if (themeToggle instanceof HTMLButtonElement && themeLabel) {
+		const updateThemeControl = () => {
+			const isDark = document.documentElement.dataset.theme === 'dark';
+			const nextLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+			themeToggle.setAttribute('aria-label', nextLabel);
+			themeToggle.setAttribute('title', nextLabel);
+			themeLabel.textContent = nextLabel;
+		};
+
+		themeToggle.addEventListener('click', () => {
+			document.documentElement.dataset.theme =
+				document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+			localStorage.setItem('theme', document.documentElement.dataset.theme);
+			updateThemeControl();
+		});
+
+		updateThemeControl();
+	}
+</script>
