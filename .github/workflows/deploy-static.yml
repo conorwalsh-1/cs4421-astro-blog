@@ -1,0 +1,58 @@
+name: Deploy Static Site
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: static-site-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            hello-cdk/package-lock.json
+
+      - name: Install site dependencies
+        run: npm ci
+
+      - name: Build static site
+        run: npm run build
+
+      - name: Install CDK dependencies
+        run: npm ci
+        working-directory: hello-cdk
+
+      - name: Build and test CDK app
+        run: |
+          npm run build
+          npm test -- --runInBand
+        working-directory: hello-cdk
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy infrastructure and static site
+        run: npx cdk deploy --require-approval never
+        working-directory: hello-cdk
