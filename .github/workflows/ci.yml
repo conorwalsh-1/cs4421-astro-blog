@@ -40,3 +40,24 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  container:
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --platform linux/amd64 -t astro-blog:ci .
+
+      - name: Run container and probe /api/health
+        run: |
+          docker run -d -p 4321:4321 -e NODE_ENV=production --name my-blog astro-blog:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:4321/api/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs my-blog
+          exit 1
