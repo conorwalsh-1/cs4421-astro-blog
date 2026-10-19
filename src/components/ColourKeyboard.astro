@@ -106,7 +106,9 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		overflow: hidden;
 		margin: 2rem 0;
 		padding: 1.25rem;
-		border-radius: 16px;
+		/* A piano lid: ebony with a fine edge in the theme's keyboard accent. */
+		border: 1px solid color-mix(in srgb, var(--keyboard-accent) 35%, transparent);
+		border-radius: 8px;
 		background: var(--keyboard-bg);
 		color: #f4f1ff;
 		box-shadow: var(--box-shadow);
@@ -153,9 +155,9 @@ const whiteCount = keys.filter((key) => !key.black).length;
 	}
 	.controls button,
 	.octave-bar button {
-		padding: 0.35em 0.8em;
+		padding: 0.3em 0.8em;
 		border: 1px solid rgba(255, 255, 255, 0.35);
-		border-radius: 999px;
+		border-radius: 4px;
 		background: rgba(255, 255, 255, 0.08);
 		color: inherit;
 		font: inherit;
