@@ -86,12 +86,17 @@ jobs:
       - name: Build Docker image
         run: docker build --platform linux/amd64 -t astro-blog:ci .
 
-      - name: Run container and probe /api/health
+      - name: Run container and wait for HEALTHCHECK to report healthy
         run: |
           docker run -d -p 4321:4321 -e NODE_ENV=production --name my-blog astro-blog:ci
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:4321/api/health; then exit 0; fi
-            sleep 1
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' my-blog)
+            if [ "$STATUS" = "healthy" ]; then
+              curl -fsS http://localhost:4321/api/health
+              exit 0
+            fi
+            sleep 2
           done
+          docker inspect --format='{{json .State.Health}}' my-blog
           docker logs my-blog
           exit 1
