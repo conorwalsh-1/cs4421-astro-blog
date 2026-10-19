@@ -1,18 +1,18 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('home page colour keyboard', () => {
-	test('lights a key in its Scriabin colour when played', async ({ page }) => {
+	test('lights a key in its palette colour when played', async ({ page }) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { level: 1, name: 'Mysterium' })).toBeVisible();
 
 		await page.getByRole('button', { name: 'C4', exact: true }).dispatchEvent('pointerdown');
 
-		await expect(page.locator('[data-now-playing]')).toHaveText('C4 · red');
+		await expect(page.locator('[data-now-playing]')).toHaveText('C4');
 		await expect(page.locator('.key[data-midi="60"]')).toHaveClass(/active/);
 	});
 
-	test('plays and names the six notes of the Mystic chord', async ({ page }) => {
-		await page.goto('/');
+	test('plays and names the six notes of the Mystic chord in Scriabin colours', async ({ page }) => {
+		await page.goto('/blog/the-mystic-chord/');
 		await page.getByRole('button', { name: 'Play the Mystic chord' }).click();
 
 		await expect(page.locator('[data-now-playing]')).toContainText('C4 · red');
@@ -42,14 +42,14 @@ test.describe('home page colour keyboard', () => {
 		const octaveLabel = page.locator('[data-octave-label]');
 
 		await page.keyboard.press('a');
-		await expect(nowPlaying).toHaveText('C4 · red');
+		await expect(nowPlaying).toHaveText('C4');
 		await page.keyboard.press('w');
-		await expect(nowPlaying).toHaveText('C#4 · violet');
+		await expect(nowPlaying).toHaveText('C#4');
 
 		await page.keyboard.press('x');
 		await expect(octaveLabel).toHaveText('Keys play C5–E6');
 		await page.keyboard.press('a');
-		await expect(nowPlaying).toHaveText('C5 · red');
+		await expect(nowPlaying).toHaveText('C5');
 		await expect(page.locator('.key[data-midi="72"] [data-shortcut-label]')).toHaveText('A');
 
 		await page.keyboard.press('z');

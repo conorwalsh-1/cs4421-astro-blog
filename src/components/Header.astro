@@ -1,5 +1,6 @@
 ---
 import { SITE_TITLE } from '../consts';
+import { DEFAULT_PALETTE, PALETTES } from '../utils/palettes';
 import HeaderLink from './HeaderLink.astro';
 ---
 
@@ -13,16 +14,30 @@ import HeaderLink from './HeaderLink.astro';
 			<HeaderLink href="/listening-room">Listening room</HeaderLink>
 			<HeaderLink href="/about">About</HeaderLink>
 		</div>
-		<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode">
-			<svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
-				<circle cx="12" cy="12" r="4"></circle>
-				<path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"></path>
-			</svg>
-			<svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
-				<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"></path>
-			</svg>
-			<span class="sr-only" data-theme-label>Switch to dark mode</span>
-		</button>
+		<div class="controls">
+			<label class="palette-picker">
+				<span class="sr-only">Colour theme</span>
+				<select data-palette-select aria-label="Colour theme" title="Colour theme">
+					{
+						Object.values(PALETTES).map((palette) => (
+							<option value={palette.id} selected={palette.id === DEFAULT_PALETTE}>
+								{palette.label}
+							</option>
+						))
+					}
+				</select>
+			</label>
+			<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode">
+				<svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+					<circle cx="12" cy="12" r="4"></circle>
+					<path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"></path>
+				</svg>
+				<svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+					<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"></path>
+				</svg>
+				<span class="sr-only" data-theme-label>Switch to dark mode</span>
+			</button>
+		</div>
 	</nav>
 </header>
 <style>
@@ -33,7 +48,7 @@ import HeaderLink from './HeaderLink.astro';
 		box-shadow: 0 2px 8px rgba(var(--black), 5%);
 	}
 	h2 {
-		margin: 0;
+		margin: 0 0.5em 0 0;
 		font-size: 1em;
 	}
 
@@ -43,18 +58,46 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	nav {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
+	}
+	.internal-links {
+		display: flex;
+		overflow-x: auto;
+		scrollbar-width: none;
 	}
 	nav a {
 		padding: 1em 0.5em;
 		color: rgb(var(--black));
 		border-bottom: 4px solid transparent;
 		text-decoration: none;
+		white-space: nowrap;
 	}
 	nav a.active {
 		text-decoration: none;
 		border-bottom-color: var(--accent);
+	}
+	.controls {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		margin-left: auto;
+		padding: 0.5rem 0;
+	}
+	.palette-picker select {
+		max-width: 12rem;
+		padding: 0.35rem 0.5rem;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 999px;
+		background: var(--surface);
+		color: rgb(var(--black));
+		font: inherit;
+		font-size: 0.75em;
+		cursor: pointer;
+	}
+	.palette-picker select:hover,
+	.palette-picker select:focus-visible {
+		border-color: var(--accent);
 	}
 	.theme-toggle {
 		display: grid;
@@ -62,7 +105,6 @@ import HeaderLink from './HeaderLink.astro';
 		width: 2.5rem;
 		height: 2.5rem;
 		padding: 0;
-		margin-left: auto;
 		border: 1px solid rgb(var(--gray-light));
 		border-radius: 50%;
 		background: var(--surface);
@@ -88,8 +130,39 @@ import HeaderLink from './HeaderLink.astro';
 	:root[data-theme='dark'] .moon-icon {
 		display: block;
 	}
+	/* Phones: title and controls on top, the links in their own scrollable row. */
+	@media (max-width: 860px) {
+		.internal-links {
+			order: 3;
+			width: 100%;
+		}
+	}
+	@media (max-width: 480px) {
+		.palette-picker select {
+			max-width: 9.5rem;
+		}
+	}
 </style>
 <script>
+	import { isPaletteId } from '../utils/palettes';
+
+	const store = {
+		get: (key: string) => {
+			try {
+				return localStorage.getItem(key);
+			} catch {
+				return null;
+			}
+		},
+		set: (key: string, value: string) => {
+			try {
+				localStorage.setItem(key, value);
+			} catch {
+				// Storage can be unavailable (private browsing); the choice just isn't remembered.
+			}
+		},
+	};
+
 	const themeToggle = document.querySelector('[data-theme-toggle]');
 	const themeLabel = document.querySelector('[data-theme-label]');
 
@@ -105,10 +178,25 @@ import HeaderLink from './HeaderLink.astro';
 		themeToggle.addEventListener('click', () => {
 			document.documentElement.dataset.theme =
 				document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-			localStorage.setItem('theme', document.documentElement.dataset.theme);
+			store.set('theme', document.documentElement.dataset.theme);
 			updateThemeControl();
 		});
 
 		updateThemeControl();
+	}
+
+	// Composer colour themes: applied to <html data-palette> and remembered.
+	const paletteSelect = document.querySelector('[data-palette-select]');
+	if (paletteSelect instanceof HTMLSelectElement) {
+		const current = document.documentElement.dataset.palette;
+		if (isPaletteId(current)) paletteSelect.value = current;
+
+		paletteSelect.addEventListener('change', () => {
+			const id = paletteSelect.value;
+			if (!isPaletteId(id)) return;
+			document.documentElement.dataset.palette = id;
+			store.set('palette', id);
+			window.dispatchEvent(new CustomEvent('palette-change', { detail: { id } }));
+		});
 	}
 </script>

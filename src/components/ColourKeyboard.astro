@@ -1,17 +1,31 @@
 ---
 import { DEFAULT_OCTAVE, keyForMidi, mappedRange, PIANO_HIGHEST, PIANO_LOWEST } from '../utils/keymap';
-import { colourOf, noteName, pitchClassOf } from '../utils/scriabin';
+import type { PaletteId } from '../utils/palettes';
+import { noteName, pitchClassOf } from '../utils/scriabin';
 
 interface Props {
 	/** Lowest MIDI note on the keyboard (defaults to A0, a full 88-key piano). */
 	from?: number;
 	/** Highest MIDI note (defaults to C8). */
 	to?: number;
+	/** Show Scriabin's Mystic chord and Prometheus scale buttons. */
+	mysticDemo?: boolean;
 	/** Root of the Mystic chord and Prometheus scale demos (defaults to C4). */
 	root?: number;
+	/** Pin the keyboard to one composer's colours; otherwise it follows the site theme. */
+	palette?: PaletteId;
+	/** Accessible name of the keyboard. */
+	label?: string;
 }
 
-const { from = PIANO_LOWEST, to = PIANO_HIGHEST, root = 60 } = Astro.props;
+const {
+	from = PIANO_LOWEST,
+	to = PIANO_HIGHEST,
+	mysticDemo = false,
+	root = 60,
+	palette,
+	label = 'Colour keyboard',
+} = Astro.props;
 const { low, high } = mappedRange(DEFAULT_OCTAVE);
 
 const keys = Array.from({ length: to - from + 1 }, (_, i) => {
@@ -20,7 +34,7 @@ const keys = Array.from({ length: to - from + 1 }, (_, i) => {
 		midi,
 		name: noteName(midi),
 		black: pitchClassOf(midi).includes('#'),
-		colour: colourOf(midi),
+		pitchClass: ((midi % 12) + 12) % 12,
 		shortcut: keyForMidi(midi, DEFAULT_OCTAVE),
 		mapped: midi >= low && midi <= high,
 		isC: pitchClassOf(midi) === 'C',
@@ -34,7 +48,8 @@ const whiteCount = keys.filter((key) => !key.black).length;
 	data-colour-keyboard
 	data-root={root}
 	data-octave={DEFAULT_OCTAVE}
-	aria-label="Scriabin colour keyboard"
+	data-palette={palette}
+	aria-label={label}
 >
 	<div class="luce" data-luce aria-hidden="true"></div>
 	<div class="readout">
@@ -42,8 +57,14 @@ const whiteCount = keys.filter((key) => !key.black).length;
 			Play a key, or use your computer keyboard (A&nbsp;W&nbsp;S&nbsp;E&nbsp;D…)
 		</p>
 		<div class="controls">
-			<button type="button" data-play="mystic">Play the Mystic chord</button>
-			<button type="button" data-play="scale">Prometheus scale</button>
+			{
+				mysticDemo && (
+					<>
+						<button type="button" data-play="mystic">Play the Mystic chord</button>
+						<button type="button" data-play="scale">Prometheus scale</button>
+					</>
+				)
+			}
 			<label><input type="checkbox" data-show-colours checked /> Colours on keys</label>
 		</div>
 	</div>
@@ -63,7 +84,7 @@ const whiteCount = keys.filter((key) => !key.black).length;
 					<button
 						type="button"
 						class:list={['key', key.black ? 'black' : 'white', { mapped: key.mapped }]}
-						style={`--key-colour: ${key.colour}`}
+						style={`--key-colour: var(--pc-${key.pitchClass})`}
 						data-midi={key.midi}
 						aria-label={key.name}
 						tabindex="-1"
@@ -86,7 +107,7 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		margin: 2rem 0;
 		padding: 1.25rem;
 		border-radius: 16px;
-		background: #0d0b16;
+		background: var(--keyboard-bg);
 		color: #f4f1ff;
 		box-shadow: var(--box-shadow);
 	}
@@ -128,7 +149,7 @@ const whiteCount = keys.filter((key) => !key.black).length;
 	.octave-label {
 		min-width: 11em;
 		text-align: center;
-		color: #c9c3e6;
+		color: var(--keyboard-accent);
 	}
 	.controls button,
 	.octave-bar button {
@@ -153,7 +174,7 @@ const whiteCount = keys.filter((key) => !key.black).length;
 	.keys-scroll {
 		position: relative;
 		overflow-x: auto;
-		scrollbar-color: #5b2bd6 transparent;
+		scrollbar-color: var(--keyboard-accent) transparent;
 	}
 	.keys {
 		position: relative;
@@ -199,11 +220,8 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		--tint: 70%;
 	}
 	/* Keys currently reachable from the computer keyboard. */
-	.white.mapped {
-		box-shadow: inset 0 3px 0 #8f6bff;
-	}
-	.black.mapped {
-		box-shadow: inset 0 3px 0 #b9a2ff;
+	.key.mapped {
+		box-shadow: inset 0 3px 0 var(--keyboard-accent);
 	}
 	.key.active {
 		background: var(--key-colour);
@@ -243,8 +261,9 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		OCTAVE_DOWN_KEY,
 		OCTAVE_UP_KEY,
 	} from '../utils/keymap';
+	import { DEFAULT_PALETTE, isPaletteId, keyColour, PALETTES, type PaletteId } from '../utils/palettes';
 	import { strike } from '../utils/piano';
-	import { colourOf, mysticChord, noteName, SCRIABIN_COLOURS, pitchClassOf } from '../utils/scriabin';
+	import { mysticChord, noteName } from '../utils/scriabin';
 
 	/** Detail of the `colour-keyboard:light` event other components dispatch to light keys. */
 	export interface LightDetail {
@@ -309,8 +328,20 @@ const whiteCount = keys.filter((key) => !key.black).length;
 			scrollToSpan(low, high, behavior);
 		};
 
-		const describe = (midis: number[]) =>
-			midis.map((midi) => `${noteName(midi)} · ${SCRIABIN_COLOURS[pitchClassOf(midi)].name}`).join('  —  ');
+		// The keyboard's own palette, else the site theme on <html>, else the default.
+		const palette = (): PaletteId => {
+			const id = root.closest<HTMLElement>('[data-palette]')?.dataset.palette;
+			return isPaletteId(id) ? id : DEFAULT_PALETTE;
+		};
+		const colourOf = (midi: number) => keyColour(palette(), midi);
+
+		// Colour names only where the composer named them (Scriabin).
+		const describe = (midis: number[]) => {
+			const names = PALETTES[palette()].colourNames;
+			return midis
+				.map((midi) => (names ? `${noteName(midi)} · ${names[((midi % 12) + 12) % 12]}` : noteName(midi)))
+				.join('  —  ');
+		};
 
 		const light = (midis: number[], label?: string) => {
 			if (midis.length === 0) return;
