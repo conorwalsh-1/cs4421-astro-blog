@@ -3,7 +3,7 @@
 // all pages through the use of the <BaseHead /> component.
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
-import FallbackImage from '../assets/blog-placeholder-1.jpg';
+import FallbackImage from '../assets/og-default.png';
 import { SITE_TITLE } from '../consts';
 import { PALETTE_IDS, paletteCss } from '../utils/palettes';
 import { Font } from 'astro:assets';
@@ -52,7 +52,8 @@ const { title, description, image = FallbackImage } = Astro.props;
 <!-- Composer colour themes (generated from src/utils/palettes.ts). -->
 <Fragment set:html={`<style>${paletteCss()}</style>`} />
 
-<Font cssVariable="--font-atkinson" preload />
+<Font cssVariable="--font-text" preload={[{ weight: 400, style: "normal" }]} />
+<Font cssVariable="--font-display" preload={[{ weight: 500, style: "normal" }]} />
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />

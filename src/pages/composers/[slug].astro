@@ -42,33 +42,30 @@ const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`
 				width: 960px;
 			}
 			.hero {
-				padding: 2rem 0 0.5rem;
-			}
-			.eyebrow {
-				margin: 0;
-				color: var(--accent);
-				font-size: 0.8em;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				text-transform: uppercase;
+				padding: 1.5rem 0 0.5rem;
 			}
 			.hero h1 {
-				margin: 0.2rem 0;
+				margin: 0.15rem 0 0.3rem;
 			}
 			.meta {
 				margin: 0;
 				color: rgb(var(--gray));
+				font-style: italic;
 			}
 			.tagline {
-				max-width: 46rem;
+				max-width: 44rem;
 				margin: 1rem 0 0;
-				font-size: 1.15em;
+				color: rgb(var(--black));
+				font-family: var(--font-display);
+				font-size: 1.45em;
+				font-style: italic;
+				line-height: 1.35;
 			}
 			.use-theme {
-				margin-top: 1rem;
-				padding: 0.4em 1em;
+				margin-top: 1.2rem;
+				padding: 0.35em 1em;
 				border: 1px solid var(--accent);
-				border-radius: 999px;
+				border-radius: 4px;
 				background: transparent;
 				color: var(--accent);
 				font: inherit;
@@ -82,37 +79,72 @@ const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`
 			}
 			.layout {
 				display: grid;
-				grid-template-columns: minmax(0, 1fr) 17rem;
-				gap: 2.5rem;
-				margin-top: 2rem;
-			}
-			.prose {
-				color: rgb(var(--gray-dark));
+				grid-template-columns: minmax(0, 1fr) 18rem;
+				gap: 3rem;
+				margin-top: 2.5rem;
 			}
 			aside section {
-				margin-bottom: 1.75rem;
+				margin-bottom: 2rem;
 			}
+			/* Sidebar headings set as small-capital programme labels. */
 			aside h2 {
-				margin-bottom: 0.5rem;
-				font-size: 1.05em;
+				margin: 0 0 0.6rem;
+				padding-bottom: 0.3rem;
+				border-bottom: 1px solid var(--rule);
+				color: var(--accent);
+				font-family: var(--font-text);
+				font-size: 0.85em;
+				font-variant-caps: all-small-caps;
+				letter-spacing: 0.14em;
 			}
-			aside ul {
+			aside ul,
+			aside ol {
 				margin: 0;
 				padding-left: 1.1rem;
 				font-size: 0.85em;
 				line-height: 1.5;
 			}
 			aside li {
-				margin-bottom: 0.4rem;
+				margin-bottom: 0.45rem;
 			}
-			.work-year {
+			/* Works listed like a concert programme: title, dotted leader, year. */
+			aside .works {
+				padding: 0;
+				list-style: none;
+			}
+			.works li {
+				display: flex;
+				gap: 0.4rem;
+				align-items: baseline;
+			}
+			.work-title {
+				flex: 0 1 auto;
+			}
+			.work-note {
+				display: block;
 				color: rgb(var(--gray));
-				font-variant-numeric: tabular-nums;
+				font-size: 0.9em;
+				font-style: italic;
+			}
+			.leader {
+				flex: 1 0 1rem;
+				border-bottom: 1px dotted rgb(var(--gray));
+				transform: translateY(-0.25em);
+			}
+			.year {
+				flex: 0 0 auto;
+				color: rgb(var(--gray));
+				white-space: nowrap;
 			}
 			.instrument {
 				margin: 0;
 				font-size: 0.85em;
+				font-style: italic;
 				line-height: 1.5;
+			}
+			.post-date {
+				color: rgb(var(--gray));
+				font-size: 0.9em;
 			}
 			.pager {
 				display: flex;
@@ -120,11 +152,17 @@ const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`
 				justify-content: space-between;
 				margin-top: 3rem;
 				padding-top: 1.5rem;
-				border-top: 1px solid rgb(var(--gray-light));
+				border-top: 3px double var(--rule);
 			}
 			.pager a {
 				display: grid;
+				font-family: var(--font-display);
+				font-size: 1.25em;
+				font-weight: 600;
 				text-decoration: none;
+			}
+			.pager a:hover {
+				text-decoration: underline;
 			}
 			.pager .next {
 				margin-left: auto;
@@ -132,10 +170,16 @@ const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`
 			}
 			.pager small {
 				color: rgb(var(--gray));
+				font-family: var(--font-text);
+				font-size: 0.6em;
+				font-variant-caps: all-small-caps;
+				font-weight: 600;
+				letter-spacing: 0.12em;
 			}
 			@media (max-width: 760px) {
 				.layout {
 					grid-template-columns: 1fr;
+					gap: 1rem;
 				}
 			}
 		</style>
@@ -158,23 +202,30 @@ const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`
 				<ColourKeyboard palette={data.palette} label={`${data.shortName} colour keyboard`} />
 
 				<div class="layout">
-					<div class="prose">
+					<div class="prose drop-cap">
 						<Content />
 					</div>
 					<aside>
 						<section>
 							<h2>Signature piano works</h2>
-							<ul>
+							<ol class="works">
 								{
 									data.works.map((work) => (
 										<li>
-											{work.title}
-											{work.year && <span class="work-year"> ({work.year})</span>}
-											{work.note && <span class="work-year"> · {work.note}</span>}
+											<span class="work-title">
+												{work.title}
+												{work.note && <span class="work-note">{work.note}</span>}
+											</span>
+											{work.year && (
+												<>
+													<span class="leader" aria-hidden="true" />
+													<span class="year">{work.year}</span>
+												</>
+											)}
 										</li>
 									))
 								}
-							</ul>
+							</ol>
 						</section>
 						<section>
 							<h2>Listen for</h2>
@@ -193,7 +244,7 @@ const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`
 											<li>
 												<a href={`/blog/${post.id}/`}>{post.data.title}</a>
 												<br />
-												<small class="work-year">
+												<small class="post-date">
 													<FormattedDate date={post.data.pubDate} />
 												</small>
 											</li>

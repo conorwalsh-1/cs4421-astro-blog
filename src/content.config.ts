@@ -54,7 +54,8 @@ const authors = defineCollection({
 		z.object({
 			name: z.string(),
 			bio: z.string(),
-			avatar: image(),
+			// Optional portrait; without one the author bio shows a monogram.
+			avatar: image().optional(),
 			links: z.array(z.object({ label: z.string(), url: z.url() })).default([]),
 		}),
 });

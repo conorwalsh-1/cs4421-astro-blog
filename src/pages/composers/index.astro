@@ -36,29 +36,32 @@ const composers = (await getCollection('composers')).sort((a, b) => a.data.order
 				flex-direction: column;
 				height: 100%;
 				overflow: hidden;
-				border-radius: 14px;
+				border: 1px solid var(--rule);
+				border-top: 3px solid var(--accent);
+				border-radius: 4px;
 				background: var(--surface);
-				box-shadow: 0 2px 10px rgba(var(--black), 8%);
 				color: rgb(var(--gray-dark));
 				text-decoration: none;
-				transition:
-					transform 0.15s ease,
-					box-shadow 0.15s ease;
+				transition: box-shadow 0.15s ease;
 			}
 			.card:hover,
 			.card:focus-visible {
-				transform: translateY(-3px);
 				box-shadow: var(--box-shadow);
 			}
+			.card:hover h2 {
+				color: var(--accent);
+			}
+			/* The palette as a miniature keyboard lid. */
 			.swatch {
 				display: grid;
 				grid-template-columns: repeat(12, 1fr);
-				height: 2.75rem;
+				height: 2.4rem;
+				padding: 0 0.6rem;
 				background: var(--keyboard-bg);
 			}
 			.swatch span {
-				margin: 0.5rem 1px 0;
-				border-radius: 0 0 3px 3px;
+				margin: 0.45rem 1px 0;
+				border-radius: 0 0 2px 2px;
 			}
 			.body {
 				display: flex;
@@ -67,26 +70,20 @@ const composers = (await getCollection('composers')).sort((a, b) => a.data.order
 				gap: 0.3rem;
 				padding: 1rem 1.1rem 1.2rem;
 			}
-			.era {
-				margin: 0;
-				color: var(--accent);
-				font-size: 0.7em;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				text-transform: uppercase;
-			}
 			.card h2 {
 				margin: 0;
-				font-size: 1.35em;
+				font-size: 1.55em;
+				transition: color 0.15s ease;
 			}
 			.years {
 				margin: 0;
 				color: rgb(var(--gray));
-				font-size: 0.8em;
+				font-size: 0.85em;
+				font-style: italic;
 			}
 			.tagline {
-				margin: 0.4rem 0 0;
-				font-size: 0.85em;
+				margin: 0.5rem 0 0;
+				font-size: 0.88em;
 				line-height: 1.5;
 			}
 		</style>
@@ -94,6 +91,7 @@ const composers = (await getCollection('composers')).sort((a, b) => a.data.order
 	<body>
 		<Header />
 		<main>
+			<p class="eyebrow">Seven composers, three centuries</p>
 			<h1>Composers through the ages</h1>
 			<p>
 				Three centuries of piano music, from Bach's harpsichord to today's concert grand. Each composer has a
@@ -114,7 +112,7 @@ const composers = (await getCollection('composers')).sort((a, b) => a.data.order
 									))}
 								</div>
 								<div class="body">
-									<p class="era">{data.era}</p>
+									<p class="eyebrow">{data.era}</p>
 									<h2>{data.name}</h2>
 									<p class="years">
 										{data.died ? `${data.born}–${data.died}` : `Born ${data.born}`} · {data.birthplace}

@@ -33,30 +33,23 @@ if (!demo) throw new Error(`No demo for composer "${composer}"`);
 		justify-content: space-between;
 		margin: 1.5rem 0 0.5rem;
 		padding: 1rem 1.25rem;
-		border-left: 6px solid var(--accent);
-		border-radius: 12px;
+		border: 1px solid var(--rule);
+		border-left: 3px solid var(--accent);
+		border-radius: 4px;
 		background: var(--surface);
-		box-shadow: 0 2px 8px rgba(var(--black), 6%);
 	}
 	.text {
 		flex: 1 1 22rem;
 	}
-	.eyebrow {
-		margin: 0;
-		color: var(--accent);
-		font-size: 0.7em;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
 	h3 {
 		margin: 0.2rem 0;
-		font-size: 1.15em;
+		font-size: 1.35em;
 	}
 	.description {
 		margin: 0;
 		color: rgb(var(--gray));
-		font-size: 0.8em;
+		font-size: 0.85em;
+		font-style: italic;
 		line-height: 1.5;
 	}
 	.actions {
@@ -65,9 +58,9 @@ if (!demo) throw new Error(`No demo for composer "${composer}"`);
 		align-items: center;
 	}
 	.play {
-		padding: 0.5em 1.2em;
+		padding: 0.45em 1.2em;
 		border: 0;
-		border-radius: 999px;
+		border-radius: 4px;
 		background: var(--accent);
 		color: var(--on-accent);
 		font: inherit;

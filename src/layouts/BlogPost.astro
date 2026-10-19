@@ -33,8 +33,7 @@ const keyColour = key ? SCRIABIN_COLOURS[key] : undefined;
 			.hero-image img {
 				display: block;
 				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
+				border-radius: 4px;
 			}
 			.prose {
 				width: 720px;
@@ -44,30 +43,34 @@ const keyColour = key ? SCRIABIN_COLOURS[key] : undefined;
 				color: rgb(var(--gray-dark));
 			}
 			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
+				padding: 1.5em 0 0;
 				text-align: center;
-				line-height: 1;
 			}
 			.title h1 {
-				margin: 0 0 0.5em 0;
+				margin: 0.2em 0 0.3em;
+				font-size: 3em;
+				line-height: 1.08;
 			}
 			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
+				color: var(--accent);
+				font-size: 0.9em;
+				font-variant-caps: all-small-caps;
+				font-weight: 600;
+				letter-spacing: 0.14em;
 			}
+			/* The post's key, shown as a band of its colour fading into the paper. */
 			.key-banner {
-				height: 140px;
-				max-width: 1020px;
-				margin: 0 auto;
-				border-radius: 12px;
-				background: radial-gradient(circle at 30% 20%, var(--key-colour), transparent 70%), #0d0b16;
-				box-shadow: var(--box-shadow);
+				height: 6px;
+				max-width: 720px;
+				margin: 1.5rem auto 0;
+				border-radius: 3px;
+				background: linear-gradient(90deg, transparent, var(--key-colour), transparent);
 			}
 			.key-label {
-				margin: 0.25em 0 0;
+				margin: 0.2em 0 0;
 				color: rgb(var(--gray));
-				font-size: 0.8em;
+				font-size: 0.9em;
+				font-style: italic;
 			}
 			.last-updated-on {
 				font-style: italic;
@@ -106,7 +109,9 @@ const keyColour = key ? SCRIABIN_COLOURS[key] : undefined;
 						}
 						<hr />
 					</div>
-					<slot />
+					<div class="drop-cap">
+						<slot />
+					</div>
 					{author && <AuthorBio {...author} />}
 				</div>
 			</article>
