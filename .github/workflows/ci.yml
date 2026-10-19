@@ -33,7 +33,7 @@ jobs:
         run: npm run lint
 
       - name: Run unit tests
-        run: npm run test:unit -- --run --exclude hello-cdk/test/**
+        run: npm run test:unit -- --run --exclude "cdk/**"
 
       - name: Build
         run: npm run build

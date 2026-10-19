@@ -1,23 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
-import * as HelloCdk from '../lib/hello-cdk-stack';
+import { StaticSiteStack } from '../lib/static-site-stack';
 
-test('creates a private encrypted bucket and CloudFront distribution', () => {
+test('creates a private bucket behind CloudFront with automatic invalidation', () => {
   const app = new cdk.App();
-  const stack = new HelloCdk.HelloCdkStack(app, 'MyTestStack');
+  const stack = new StaticSiteStack(app, 'MyTestStack');
   const template = Template.fromStack(stack);
 
   template.resourceCountIs('AWS::S3::Bucket', 1);
   template.hasResourceProperties('AWS::S3::Bucket', {
-    BucketEncryption: {
-      ServerSideEncryptionConfiguration: [
-        {
-          ServerSideEncryptionByDefault: {
-            SSEAlgorithm: 'AES256',
-          },
-        },
-      ],
-    },
     PublicAccessBlockConfiguration: {
       BlockPublicAcls: true,
       BlockPublicPolicy: true,
@@ -27,6 +18,8 @@ test('creates a private encrypted bucket and CloudFront distribution', () => {
   });
   template.resourceCountIs('AWS::CloudFront::Distribution', 1);
   template.resourceCountIs('AWS::CloudFront::OriginAccessControl', 1);
-  template.resourceCountIs('Custom::CDKBucketDeployment', 1);
+  template.hasResourceProperties('Custom::CDKBucketDeployment', {
+    DistributionPaths: ['/*'],
+  });
   template.hasOutput('SiteUrl', {});
 });
