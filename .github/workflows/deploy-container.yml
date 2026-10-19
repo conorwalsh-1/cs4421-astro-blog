@@ -1,0 +1,77 @@
+name: Deploy Container to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: container-deployment
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: astro-blog
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            cdk/package-lock.json
+
+      - run: npm ci && npm run test:unit -- --run # 1. Quality Gate
+
+      - name: Install CDK Dependencies
+        run: npm ci --prefix cdk
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR Repository Exists
+        working-directory: cdk
+        run: npx cdk deploy ContainerRegistryStack --require-approval never
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag & Push Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy ECS Infrastructure
+        working-directory: cdk
+        run: npx cdk deploy ContainerServiceStack --require-approval never --outputs-file outputs.json
+
+      - name: Roll Out New Image (zero-downtime rolling update)
+        run: |
+          CLUSTER=$(jq -r '.ContainerServiceStack.ClusterName' cdk/outputs.json)
+          SERVICE=$(jq -r '.ContainerServiceStack.ServiceName' cdk/outputs.json)
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment > /dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+
+      - name: Smoke Test /api/health
+        run: |
+          URL=$(jq -r '.ContainerServiceStack.ServiceUrl' cdk/outputs.json)
+          curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "$URL/api/health"
+          APP_URL=$(jq -r '.ContainerServiceStack.AppUrl' cdk/outputs.json)
+          echo "Deployed ${{ github.sha }} to $APP_URL" >> "$GITHUB_STEP_SUMMARY"
