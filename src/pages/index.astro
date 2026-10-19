@@ -26,16 +26,19 @@ const latest = (await getCollection('blog'))
 			main {
 				width: 960px;
 			}
-			.eyebrow {
-				margin: 0;
+			.hero {
+				max-width: 46rem;
+				padding-top: 1rem;
+			}
+			.hero h1 {
+				margin-top: 0.3rem;
+			}
+			.hero h1 em {
 				color: var(--accent);
-				font-size: 0.8em;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				text-transform: uppercase;
+				font-weight: 500;
 			}
 			.intro {
-				max-width: 46rem;
+				font-size: 1.08em;
 			}
 			.composer-chips {
 				display: flex;
@@ -49,12 +52,12 @@ const latest = (await getCollection('blog'))
 				display: inline-flex;
 				gap: 0.45rem;
 				align-items: center;
-				padding: 0.3em 0.85em;
-				border: 1px solid rgb(var(--gray-light));
-				border-radius: 999px;
+				padding: 0.25em 0.8em;
+				border: 1px solid var(--rule);
+				border-radius: 4px;
 				background: var(--surface);
 				color: rgb(var(--black));
-				font-size: 0.8em;
+				font-size: 0.85em;
 				text-decoration: none;
 			}
 			.composer-chips a:hover,
@@ -73,11 +76,32 @@ const latest = (await getCollection('blog'))
 				list-style: none;
 			}
 			.latest li {
-				margin-bottom: 0.6rem;
+				display: grid;
+				grid-template-columns: 8.5rem 1fr;
+				gap: 1rem;
+				padding: 0.6rem 0;
+				border-bottom: 1px solid var(--rule);
 			}
-			.latest time {
+			.latest :global(time) {
 				color: rgb(var(--gray));
-				font-size: 0.8em;
+				font-size: 0.85em;
+				font-variant-caps: all-small-caps;
+				letter-spacing: 0.08em;
+			}
+			.latest a {
+				font-family: var(--font-display);
+				font-size: 1.2em;
+				font-weight: 600;
+				text-decoration: none;
+			}
+			.latest a:hover {
+				text-decoration: underline;
+			}
+			@media (max-width: 560px) {
+				.latest li {
+					grid-template-columns: 1fr;
+					gap: 0;
+				}
 			}
 			.more {
 				font-size: 0.85em;
@@ -87,17 +111,21 @@ const latest = (await getCollection('blog'))
 	<body>
 		<Header />
 		<main>
-			<p class="eyebrow">Classical piano over the ages</p>
-			<h1>{SITE_TITLE}</h1>
-			<p class="intro">
+			<header class="hero">
+				<p class="eyebrow">From Bach to Hamelin</p>
+				<h1>Three centuries <em>at the keyboard</em></h1>
+				<p class="intro">
 				From Bach's preludes to the dazzling études of Marc-André Hamelin, three centuries of composers have
 				reinvented what a keyboard can do. Play the piano below with your mouse or computer keyboard, then meet
 				the composers. Each has a demo you can hear and a colour theme of their own (try the picker at the top
 				of the page; <strong>Scriabin</strong> uses the colours he heard in each key).
-			</p>
+				</p>
+			</header>
 
 			<ColourKeyboard label="Visual piano" />
 
+			<div class="stave" aria-hidden="true"></div>
+			<p class="eyebrow">The composers</p>
 			<h2>Through the ages</h2>
 			<LifespanTimeline composers={composers} />
 			<ul class="composer-chips">
@@ -114,14 +142,15 @@ const latest = (await getCollection('blog'))
 			</ul>
 			<p class="more"><a href="/composers">Meet all the composers →</a></p>
 
+			<div class="ornament" aria-hidden="true"></div>
+			<p class="eyebrow">Programme notes</p>
 			<h2>From the journal</h2>
 			<ul class="latest">
 				{
 					latest.map((post) => (
 						<li>
-							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
-							<br />
 							<FormattedDate date={post.data.pubDate} />
+							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
 						</li>
 					))
 				}
