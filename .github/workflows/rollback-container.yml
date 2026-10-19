@@ -1,0 +1,47 @@
+name: Rollback Container
+
+# Rollback Drill 2: point `latest` back at a previous, known-good image and redeploy.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Known-good image tag (commit SHA) already in ECR'
+        required: true
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: astro-blog
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Retag Known-Good Image as latest
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          MANIFEST=$(aws ecr batch-get-image --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" --query 'images[0].imageManifest' --output text)
+          if [ -z "$MANIFEST" ] || [ "$MANIFEST" = "None" ]; then
+            echo "Image tag $IMAGE_TAG not found in $ECR_REPOSITORY" && exit 1
+          fi
+          aws ecr put-image --repository-name "$ECR_REPOSITORY" --image-tag latest \
+            --image-manifest "$MANIFEST" > /dev/null || echo "latest already points at $IMAGE_TAG"
+
+      - name: Redeploy Service
+        run: |
+          STACK=ContainerServiceStack
+          CLUSTER=$(aws cloudformation describe-stacks --stack-name $STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='ClusterName'].OutputValue" --output text)
+          SERVICE=$(aws cloudformation describe-stacks --stack-name $STACK \
+            --query "Stacks[0].Outputs[?OutputKey=='ServiceName'].OutputValue" --output text)
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment > /dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+          echo "Rolled back to ${{ inputs.image_tag }}" >> "$GITHUB_STEP_SUMMARY"
