@@ -1,0 +1,248 @@
+---
+export const prerender = true;
+
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import ColourKeyboard from '../../components/ColourKeyboard.astro';
+import ComposerDemo from '../../components/ComposerDemo.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+export async function getStaticPaths() {
+	const composers = (await getCollection('composers')).sort((a, b) => a.data.order - b.data.order);
+	return composers.map((composer, i) => ({
+		params: { slug: composer.id },
+		props: { composer, previous: composers[i - 1], next: composers[i + 1] },
+	}));
+}
+
+interface Props {
+	composer: CollectionEntry<'composers'>;
+	previous?: CollectionEntry<'composers'>;
+	next?: CollectionEntry<'composers'>;
+}
+
+const { composer, previous, next } = Astro.props;
+const { data } = composer;
+const { Content } = await render(composer);
+const posts = (await getCollection('blog', (post) => post.data.composer?.id === composer.id)).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const lifespan = data.died ? `${data.born}–${data.died}` : `Born ${data.born}`;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`${data.name} | ${SITE_TITLE}`} description={data.tagline} />
+		<style>
+			main {
+				width: 960px;
+			}
+			.hero {
+				padding: 2rem 0 0.5rem;
+			}
+			.eyebrow {
+				margin: 0;
+				color: var(--accent);
+				font-size: 0.8em;
+				font-weight: 700;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+			.hero h1 {
+				margin: 0.2rem 0;
+			}
+			.meta {
+				margin: 0;
+				color: rgb(var(--gray));
+			}
+			.tagline {
+				max-width: 46rem;
+				margin: 1rem 0 0;
+				font-size: 1.15em;
+			}
+			.use-theme {
+				margin-top: 1rem;
+				padding: 0.4em 1em;
+				border: 1px solid var(--accent);
+				border-radius: 999px;
+				background: transparent;
+				color: var(--accent);
+				font: inherit;
+				font-size: 0.8em;
+				cursor: pointer;
+			}
+			.use-theme:hover,
+			.use-theme:focus-visible {
+				background: var(--accent);
+				color: var(--on-accent);
+			}
+			.layout {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) 17rem;
+				gap: 2.5rem;
+				margin-top: 2rem;
+			}
+			.prose {
+				color: rgb(var(--gray-dark));
+			}
+			aside section {
+				margin-bottom: 1.75rem;
+			}
+			aside h2 {
+				margin-bottom: 0.5rem;
+				font-size: 1.05em;
+			}
+			aside ul {
+				margin: 0;
+				padding-left: 1.1rem;
+				font-size: 0.85em;
+				line-height: 1.5;
+			}
+			aside li {
+				margin-bottom: 0.4rem;
+			}
+			.work-year {
+				color: rgb(var(--gray));
+				font-variant-numeric: tabular-nums;
+			}
+			.instrument {
+				margin: 0;
+				font-size: 0.85em;
+				line-height: 1.5;
+			}
+			.pager {
+				display: flex;
+				gap: 1rem;
+				justify-content: space-between;
+				margin-top: 3rem;
+				padding-top: 1.5rem;
+				border-top: 1px solid rgb(var(--gray-light));
+			}
+			.pager a {
+				display: grid;
+				text-decoration: none;
+			}
+			.pager .next {
+				margin-left: auto;
+				text-align: right;
+			}
+			.pager small {
+				color: rgb(var(--gray));
+			}
+			@media (max-width: 760px) {
+				.layout {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<article data-palette={data.palette} data-demo-scope>
+				<header class="hero">
+					<p class="eyebrow">{data.era}</p>
+					<h1>{data.name}</h1>
+					<p class="meta">{lifespan} · {data.birthplace}</p>
+					<p class="tagline">{data.tagline}</p>
+					<button type="button" class="use-theme" data-use-palette={data.palette}>
+						Use the {data.shortName} theme on the whole site
+					</button>
+				</header>
+
+				<ComposerDemo composer={composer.id} />
+				<ColourKeyboard palette={data.palette} label={`${data.shortName} colour keyboard`} />
+
+				<div class="layout">
+					<div class="prose">
+						<Content />
+					</div>
+					<aside>
+						<section>
+							<h2>Signature piano works</h2>
+							<ul>
+								{
+									data.works.map((work) => (
+										<li>
+											{work.title}
+											{work.year && <span class="work-year"> ({work.year})</span>}
+											{work.note && <span class="work-year"> · {work.note}</span>}
+										</li>
+									))
+								}
+							</ul>
+						</section>
+						<section>
+							<h2>Listen for</h2>
+							<ul>{data.listenFor.map((item) => <li>{item}</li>)}</ul>
+						</section>
+						<section>
+							<h2>At the keyboard</h2>
+							<p class="instrument">{data.instrument}</p>
+						</section>
+						{
+							posts.length > 0 && (
+								<section>
+									<h2>From the journal</h2>
+									<ul>
+										{posts.map((post) => (
+											<li>
+												<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+												<br />
+												<small class="work-year">
+													<FormattedDate date={post.data.pubDate} />
+												</small>
+											</li>
+										))}
+									</ul>
+								</section>
+							)
+						}
+					</aside>
+				</div>
+			</article>
+
+			<nav class="pager" aria-label="Other composers">
+				{
+					previous && (
+						<a href={`/composers/${previous.id}/`} rel="prev">
+							<small>← Earlier</small>
+							{previous.data.name}
+						</a>
+					)
+				}
+				{
+					next && (
+						<a class="next" href={`/composers/${next.id}/`} rel="next">
+							<small>Later →</small>
+							{next.data.name}
+						</a>
+					)
+				}
+			</nav>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	import { isPaletteId, PALETTES } from '../../utils/palettes';
+
+	// "Use this theme" applies the composer's palette site-wide, like the header picker.
+	document.querySelectorAll<HTMLButtonElement>('[data-use-palette]').forEach((button) => {
+		button.addEventListener('click', () => {
+			const id = button.dataset.usePalette;
+			if (!isPaletteId(id)) return;
+			const picker = document.querySelector<HTMLSelectElement>('[data-palette-select]');
+			if (picker) {
+				picker.value = id;
+				picker.dispatchEvent(new Event('change'));
+			}
+			button.textContent = `Using the ${PALETTES[id].label} theme`;
+		});
+	});
+</script>

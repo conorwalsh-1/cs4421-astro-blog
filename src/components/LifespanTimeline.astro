@@ -1,0 +1,130 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+	composers: CollectionEntry<'composers'>[];
+}
+
+const composers = [...Astro.props.composers].sort((a, b) => a.data.order - b.data.order);
+const thisYear = new Date().getFullYear();
+const START = 1675;
+const END = Math.max(2035, thisYear + 5);
+const span = END - START;
+const percent = (year: number) => ((year - START) / span) * 100;
+const ticks = Array.from({ length: Math.floor((END - 1700) / 50) + 1 }, (_, i) => 1700 + i * 50);
+---
+
+<figure class="timeline" aria-labelledby="timeline-caption">
+	<figcaption id="timeline-caption">Lifespans, {START}–{thisYear}</figcaption>
+	<ol>
+		{
+			composers.map(({ id, data }) => {
+				const end = data.died ?? thisYear;
+				return (
+					<li data-palette={data.palette}>
+						<a href={`/composers/${id}/`}>
+							<span class="name">{data.shortName}</span>
+							<span class="years">{data.died ? `${data.born}–${data.died}` : `b. ${data.born}`}</span>
+						</a>
+						<span class="track" aria-hidden="true">
+							<span
+								class:list={['bar', { living: !data.died }]}
+								style={`left: ${percent(data.born)}%; width: ${percent(end) - percent(data.born)}%`}
+							/>
+						</span>
+					</li>
+				);
+			})
+		}
+	</ol>
+	<div class="axis" aria-hidden="true">
+		{ticks.map((year) => <span style={`left: ${percent(year)}%`}>{year}</span>)}
+	</div>
+</figure>
+
+<style>
+	.timeline {
+		margin: 2rem 0;
+		font-size: 0.85em;
+	}
+	figcaption {
+		margin-bottom: 0.75rem;
+		color: rgb(var(--gray));
+		font-size: 0.85em;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	ol {
+		display: grid;
+		gap: 0.4rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	li {
+		display: grid;
+		grid-template-columns: 9.5rem 1fr;
+		gap: 0.75rem;
+		align-items: center;
+	}
+	li a {
+		display: flex;
+		gap: 0.5rem;
+		align-items: baseline;
+		justify-content: space-between;
+		color: rgb(var(--black));
+		text-decoration: none;
+	}
+	li a:hover .name,
+	li a:focus-visible .name {
+		color: var(--accent);
+		text-decoration: underline;
+	}
+	.name {
+		font-weight: 700;
+	}
+	.years {
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+		font-variant-numeric: tabular-nums;
+	}
+	.track {
+		position: relative;
+		height: 0.9rem;
+		border-radius: 999px;
+		background: rgb(var(--gray-light));
+	}
+	.bar {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--pc-0), var(--pc-7), var(--pc-2), var(--accent));
+	}
+	/* Still living: the bar fades out into the present. */
+	.bar.living {
+		mask-image: linear-gradient(90deg, #000 70%, transparent);
+	}
+	.axis {
+		position: relative;
+		height: 1.5rem;
+		margin-left: calc(9.5rem + 0.75rem);
+		color: rgb(var(--gray));
+		font-size: 0.75em;
+	}
+	.axis span {
+		position: absolute;
+		top: 0.3rem;
+		transform: translateX(-50%);
+	}
+	@media (max-width: 560px) {
+		li {
+			grid-template-columns: 1fr;
+			gap: 0.15rem;
+		}
+		.axis {
+			margin-left: 0;
+		}
+	}
+</style>

@@ -1,0 +1,126 @@
+---
+import { DEMOS } from '../utils/demos';
+import { formatClock } from '../utils/score';
+
+interface Props {
+	/** Composer id (content collection entry id); must have a demo in src/utils/demos.ts. */
+	composer: string;
+}
+
+const { composer } = Astro.props;
+const demo = DEMOS[composer];
+if (!demo) throw new Error(`No demo for composer "${composer}"`);
+---
+
+<div class="composer-demo" data-composer-demo={composer}>
+	<div class="text">
+		<p class="eyebrow">{demo.quotation ? 'Hear it on the piano' : 'An original sketch in this style'}</p>
+		<h3>{demo.title}</h3>
+		<p class="description">{demo.description}</p>
+	</div>
+	<div class="actions">
+		<button type="button" class="play" data-demo-toggle disabled>▶ Play demo</button>
+		<span class="length">{formatClock(demo.score.duration)}</span>
+	</div>
+</div>
+
+<style>
+	.composer-demo {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		align-items: center;
+		justify-content: space-between;
+		margin: 1.5rem 0 0.5rem;
+		padding: 1rem 1.25rem;
+		border-left: 6px solid var(--accent);
+		border-radius: 12px;
+		background: var(--surface);
+		box-shadow: 0 2px 8px rgba(var(--black), 6%);
+	}
+	.text {
+		flex: 1 1 22rem;
+	}
+	.eyebrow {
+		margin: 0;
+		color: var(--accent);
+		font-size: 0.7em;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	h3 {
+		margin: 0.2rem 0;
+		font-size: 1.15em;
+	}
+	.description {
+		margin: 0;
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+		line-height: 1.5;
+	}
+	.actions {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+	}
+	.play {
+		padding: 0.5em 1.2em;
+		border: 0;
+		border-radius: 999px;
+		background: var(--accent);
+		color: var(--on-accent);
+		font: inherit;
+		font-size: 0.85em;
+		cursor: pointer;
+	}
+	.play:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+	.length {
+		color: rgb(var(--gray));
+		font-size: 0.75em;
+		font-variant-numeric: tabular-nums;
+	}
+</style>
+
+<script>
+	import { DEMOS } from '../utils/demos';
+	import { keyboardOutput } from '../utils/keyboard-output';
+	import { ScorePlayer } from '../utils/score-player';
+
+	const players: ScorePlayer[] = [];
+
+	document.querySelectorAll<HTMLElement>('[data-composer-demo]').forEach((element) => {
+		const demo = DEMOS[element.dataset.composerDemo ?? ''];
+		const button = element.querySelector<HTMLButtonElement>('[data-demo-toggle]');
+		if (!demo || !button) return;
+
+		// The keyboard in the same section (or the first on the page) shows the notes.
+		const scope = element.closest('[data-demo-scope]') ?? document;
+		const keyboard = scope.querySelector('[data-colour-keyboard]');
+
+		const player = new ScorePlayer(
+			demo.score,
+			keyboardOutput(keyboard, {
+				onStateChange: (state) => {
+					button.textContent = state === 'playing' ? '■ Stop' : '▶ Play demo';
+					element.classList.toggle('playing', state === 'playing');
+				},
+			}),
+		);
+		players.push(player);
+
+		button.addEventListener('click', () => {
+			if (player.playbackState === 'playing') {
+				player.stop();
+				return;
+			}
+			// Only one demo at a time.
+			players.forEach((other) => other !== player && other.stop());
+			player.play();
+		});
+		button.disabled = false;
+	});
+</script>

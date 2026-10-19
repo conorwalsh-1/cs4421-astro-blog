@@ -8,7 +8,7 @@ export default getViteConfig({
 			provider: 'v8',
 			include: ['src/utils/**/*.ts', 'src/pages/api/**/*.ts'],
 			// Browser-only Web Audio synth; exercised by the Playwright E2E tests instead.
-			exclude: ['src/utils/piano.ts', '**/*.test.ts'],
+			exclude: ['src/utils/piano.ts', 'src/utils/keyboard-output.ts', '**/*.test.ts'],
 			thresholds: { lines: 80, functions: 80, branches: 75, statements: 80 },
 		},
 	},
