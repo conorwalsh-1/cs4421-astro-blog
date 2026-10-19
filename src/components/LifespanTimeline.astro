@@ -12,11 +12,29 @@ const END = Math.max(2035, thisYear + 5);
 const span = END - START;
 const percent = (year: number) => ((year - START) / span) * 100;
 const ticks = Array.from({ length: Math.floor((END - 1700) / 50) + 1 }, (_, i) => 1700 + i * 50);
+
+// Conventional (approximate) boundaries of the style periods.
+const ERAS = [
+	{ name: 'Baroque', from: START, to: 1750 },
+	{ name: 'Classical', from: 1750, to: 1820 },
+	{ name: 'Romantic', from: 1820, to: 1900 },
+	{ name: 'Modern', from: 1900, to: END },
+];
+const eraLines = ERAS.slice(1)
+	.map(({ from }) => `transparent calc(${percent(from)}% - 1px), var(--rule) calc(${percent(from)}% - 1px), var(--rule) ${percent(from)}%, transparent ${percent(from)}%`)
+	.join(', ');
 ---
 
 <figure class="timeline" aria-labelledby="timeline-caption">
-	<figcaption id="timeline-caption">Lifespans, {START}–{thisYear}</figcaption>
-	<ol>
+	<figcaption id="timeline-caption">Lifespans, {START}–{thisYear} <span class="note">· eras are approximate</span></figcaption>
+	<div class="eras" aria-hidden="true">
+		{
+			ERAS.map((era) => (
+				<span style={`left: ${percent(era.from)}%; width: ${percent(era.to) - percent(era.from)}%`}>{era.name}</span>
+			))
+		}
+	</div>
+	<ol style={`--era-lines: linear-gradient(90deg, ${eraLines})`}>
 		{
 			composers.map(({ id, data }) => {
 				const end = data.died ?? thisYear;
@@ -50,10 +68,34 @@ const ticks = Array.from({ length: Math.floor((END - 1700) / 50) + 1 }, (_, i) =
 	figcaption {
 		margin-bottom: 0.75rem;
 		color: rgb(var(--gray));
-		font-size: 0.85em;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		font-size: 0.95em;
+		font-variant-caps: all-small-caps;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+	}
+	figcaption .note {
+		font-style: italic;
+		font-variant-caps: normal;
+		font-weight: 400;
+		letter-spacing: 0;
+	}
+	/* Era bands above the lifespans, aligned with the tracks. */
+	.eras {
+		position: relative;
+		height: 1.6rem;
+		margin: 0 0 0.4rem calc(9.5rem + 0.75rem);
+		border-bottom: 1px solid var(--rule);
+	}
+	.eras span {
+		position: absolute;
+		bottom: 0.25rem;
+		overflow: hidden;
+		color: var(--accent);
+		font-size: 0.9em;
+		font-style: italic;
+		text-align: center;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	ol {
 		display: grid;
@@ -91,9 +133,9 @@ const ticks = Array.from({ length: Math.floor((END - 1700) / 50) + 1 }, (_, i) =
 	}
 	.track {
 		position: relative;
-		height: 0.9rem;
+		height: 0.8rem;
 		border-radius: 999px;
-		background: rgb(var(--gray-light));
+		background: var(--era-lines), rgba(var(--black), 6%);
 	}
 	.bar {
 		position: absolute;
@@ -123,7 +165,8 @@ const ticks = Array.from({ length: Math.floor((END - 1700) / 50) + 1 }, (_, i) =
 			grid-template-columns: 1fr;
 			gap: 0.15rem;
 		}
-		.axis {
+		.axis,
+		.eras {
 			margin-left: 0;
 		}
 	}
