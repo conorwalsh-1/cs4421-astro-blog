@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { ContainerRegistryStack } from '../lib/container-registry-stack';
+import { ContainerServiceStack } from '../lib/container-service-stack';
 import { StaticSiteStack } from '../lib/static-site-stack';
 
 const app = new cdk.App();
@@ -11,4 +12,7 @@ const env = { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_
 new StaticSiteStack(app, 'StaticSiteStack', { env });
 
 // Week 6: ECR repository for the Docker image.
-new ContainerRegistryStack(app, 'ContainerRegistryStack', { env });
+const registry = new ContainerRegistryStack(app, 'ContainerRegistryStack', { env });
+
+// Week 7: ECS Fargate service, load balancer and CloudWatch alarms.
+new ContainerServiceStack(app, 'ContainerServiceStack', { env, repository: registry.repository });
