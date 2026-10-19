@@ -1,0 +1,303 @@
+---
+import { colourOf, noteName, pitchClassOf } from '../utils/scriabin';
+
+interface Props {
+	/** Lowest MIDI note on the keyboard (defaults to C4). */
+	from?: number;
+	/** Highest MIDI note (defaults to E6, so the Mystic chord on C4 fits). */
+	to?: number;
+}
+
+const { from = 60, to = 88 } = Astro.props;
+
+// Computer-keyboard shortcuts for the first 17 keys, laid out like a piano.
+const SHORTCUTS = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k', 'o', 'l', 'p', ';'];
+
+const keys = Array.from({ length: to - from + 1 }, (_, i) => {
+	const midi = from + i;
+	return {
+		midi,
+		name: noteName(midi),
+		black: pitchClassOf(midi).includes('#'),
+		colour: colourOf(midi),
+		shortcut: SHORTCUTS[i],
+	};
+});
+const whiteCount = keys.filter((key) => !key.black).length;
+---
+
+<section class="colour-keyboard" data-colour-keyboard data-root={from} aria-label="Scriabin colour keyboard">
+	<div class="luce" data-luce aria-hidden="true"></div>
+	<div class="readout">
+		<p class="now-playing" data-now-playing aria-live="polite">
+			Play a key, or use your computer keyboard (A&nbsp;W&nbsp;S&nbsp;E&nbsp;D…)
+		</p>
+		<div class="controls">
+			<button type="button" data-play="mystic">Play the Mystic chord</button>
+			<button type="button" data-play="scale">Prometheus scale</button>
+			<label><input type="checkbox" data-show-colours checked /> Colours on keys</label>
+		</div>
+	</div>
+	<div class="keys-scroll">
+		<div class="keys" style={`--white-count: ${whiteCount}`}>
+			{
+				keys.map((key) => (
+					<button
+						type="button"
+						class:list={['key', key.black ? 'black' : 'white']}
+						style={`--key-colour: ${key.colour}`}
+						data-midi={key.midi}
+						data-shortcut={key.shortcut}
+						aria-label={key.name}
+					>
+						{key.shortcut && !key.black && <span class="shortcut">{key.shortcut.toUpperCase()}</span>}
+					</button>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style>
+	.colour-keyboard {
+		position: relative;
+		overflow: hidden;
+		margin: 2rem 0;
+		padding: 1.25rem;
+		border-radius: 16px;
+		background: #0d0b16;
+		color: #f4f1ff;
+		box-shadow: var(--box-shadow);
+	}
+	/* Scriabin's "luce": a wash of light in the colour of whatever is sounding. */
+	.luce {
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at 50% 0%, var(--luce, transparent), transparent 70%);
+		opacity: 0.55;
+		transition: background 0.6s ease;
+		pointer-events: none;
+	}
+	.readout {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+		font-size: 0.8em;
+	}
+	.now-playing {
+		margin: 0;
+		min-height: 1.7em;
+	}
+	.controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: center;
+	}
+	.controls button {
+		padding: 0.35em 0.8em;
+		border: 1px solid rgba(255, 255, 255, 0.35);
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	.controls button:hover,
+	.controls button:focus-visible {
+		background: rgba(255, 255, 255, 0.2);
+	}
+	.keys-scroll {
+		position: relative;
+		overflow-x: auto;
+	}
+	.keys {
+		position: relative;
+		display: flex;
+		min-width: calc(var(--white-count) * 34px);
+		height: 180px;
+		user-select: none;
+		touch-action: none;
+	}
+	.key {
+		padding: 0;
+		border: 0;
+		cursor: pointer;
+		transition:
+			background 0.15s ease,
+			box-shadow 0.15s ease;
+	}
+	.white {
+		flex: 1;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		margin-right: 2px;
+		border-radius: 0 0 6px 6px;
+		background: linear-gradient(#fbfaf7 70%, color-mix(in srgb, var(--key-colour) var(--tint, 0%), #fbfaf7));
+	}
+	.black {
+		position: relative;
+		z-index: 1;
+		flex: 0 0 auto;
+		width: 22px;
+		height: 62%;
+		margin: 0 -12px 0 -12px;
+		border-radius: 0 0 4px 4px;
+		background: linear-gradient(#222 60%, color-mix(in srgb, var(--key-colour) var(--tint, 0%), #222));
+	}
+	.show-colours .key {
+		--tint: 70%;
+	}
+	.key.active {
+		background: var(--key-colour);
+		box-shadow: 0 0 24px var(--key-colour);
+	}
+	.shortcut {
+		margin-bottom: 0.4rem;
+		color: #6b6880;
+		font-size: 0.6em;
+	}
+</style>
+
+<script>
+	import { colourOf, midiToFrequency, mysticChord, noteName, SCRIABIN_COLOURS, pitchClassOf } from '../utils/scriabin';
+
+	let audio: AudioContext | undefined;
+	let output: AudioNode | undefined;
+
+	// A short synthetic "hall" so held notes bloom like a pedalled piano.
+	function createReverb(context: AudioContext): ConvolverNode {
+		const seconds = 2.5;
+		const impulse = context.createBuffer(2, context.sampleRate * seconds, context.sampleRate);
+		for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+			const data = impulse.getChannelData(channel);
+			for (let i = 0; i < data.length; i++) {
+				data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) ** 3;
+			}
+		}
+		const reverb = context.createConvolver();
+		reverb.buffer = impulse;
+		return reverb;
+	}
+
+	function getAudio(): { context: AudioContext; destination: AudioNode } {
+		if (!audio || !output) {
+			audio = new AudioContext();
+			const master = audio.createGain();
+			master.gain.value = 0.35;
+			const reverb = createReverb(audio);
+			const wet = audio.createGain();
+			wet.gain.value = 0.3;
+			master.connect(audio.destination);
+			master.connect(reverb).connect(wet).connect(audio.destination);
+			output = master;
+		}
+		return { context: audio, destination: output };
+	}
+
+	// A simple piano-like voice: a few decaying partials.
+	function strike(midi: number, when = 0, velocity = 1) {
+		const { context, destination } = getAudio();
+		const start = context.currentTime + when;
+		const frequency = midiToFrequency(midi);
+		const envelope = context.createGain();
+		envelope.gain.setValueAtTime(0, start);
+		envelope.gain.linearRampToValueAtTime(0.5 * velocity, start + 0.008);
+		envelope.gain.exponentialRampToValueAtTime(0.0001, start + 3.2);
+		envelope.connect(destination);
+
+		[
+			{ ratio: 1, gain: 1, type: 'triangle' as OscillatorType },
+			{ ratio: 2, gain: 0.35, type: 'sine' as OscillatorType },
+			{ ratio: 3, gain: 0.12, type: 'sine' as OscillatorType },
+		].forEach(({ ratio, gain, type }) => {
+			const oscillator = context.createOscillator();
+			const partialGain = context.createGain();
+			oscillator.type = type;
+			oscillator.frequency.value = frequency * ratio;
+			partialGain.gain.value = gain;
+			oscillator.connect(partialGain).connect(envelope);
+			oscillator.start(start);
+			oscillator.stop(start + 3.3);
+		});
+	}
+
+	function setUpKeyboard(root: HTMLElement) {
+		const luce = root.querySelector<HTMLElement>('[data-luce]');
+		const nowPlaying = root.querySelector<HTMLElement>('[data-now-playing]');
+		const keys = new Map<number, HTMLElement>();
+		root.querySelectorAll<HTMLElement>('[data-midi]').forEach((key) => keys.set(Number(key.dataset.midi), key));
+
+		const light = (midis: number[]) => {
+			const last = midis[midis.length - 1];
+			const stops = midis.map(colourOf).join(', ');
+			if (luce) luce.style.setProperty('--luce', midis.length > 1 ? colourOf(midis[0]) : colourOf(last));
+			if (luce && midis.length > 1) luce.style.background = `linear-gradient(90deg, ${stops})`;
+			else if (luce) luce.style.removeProperty('background');
+			if (nowPlaying) {
+				nowPlaying.textContent = midis
+					.map((midi) => `${noteName(midi)} · ${SCRIABIN_COLOURS[pitchClassOf(midi)].name}`)
+					.join('  —  ');
+			}
+		};
+
+		const play = (midi: number, when = 0) => {
+			strike(midi, when);
+			const key = keys.get(midi);
+			window.setTimeout(() => {
+				key?.classList.add('active');
+				window.setTimeout(() => key?.classList.remove('active'), 450);
+			}, when * 1000);
+		};
+
+		root.addEventListener('pointerdown', (event) => {
+			const key = (event.target as HTMLElement).closest<HTMLElement>('[data-midi]');
+			if (!key) return;
+			const midi = Number(key.dataset.midi);
+			play(midi);
+			light([midi]);
+		});
+
+		const rootMidi = Number(root.dataset.root ?? 60);
+		root.querySelector('[data-play="mystic"]')?.addEventListener('click', () => {
+			const chord = mysticChord(rootMidi);
+			chord.forEach((midi, i) => play(midi, i * 0.09));
+			light(chord);
+		});
+		root.querySelector('[data-play="scale"]')?.addEventListener('click', () => {
+			// The Prometheus scale: the Mystic chord's notes arranged within one octave.
+			const scale = [0, 2, 4, 6, 9, 10, 12].map((step) => rootMidi + step);
+			scale.forEach((midi, i) => play(midi, i * 0.28));
+			light(scale);
+		});
+
+		const toggle = root.querySelector<HTMLInputElement>('[data-show-colours]');
+		const syncColours = () => root.classList.toggle('show-colours', toggle?.checked ?? false);
+		toggle?.addEventListener('change', syncColours);
+		syncColours();
+
+		return { keys, play, light };
+	}
+
+	const keyboards = [...document.querySelectorAll<HTMLElement>('[data-colour-keyboard]')].map(setUpKeyboard);
+
+	// Computer-keyboard input drives the first keyboard on the page.
+	window.addEventListener('keydown', (event) => {
+		const target = event.target as HTMLElement;
+		if (event.repeat || event.metaKey || event.ctrlKey || target.closest('input, textarea, select')) return;
+		const first = keyboards[0];
+		if (!first) return;
+		for (const [midi, key] of first.keys) {
+			if (key.dataset.shortcut === event.key.toLowerCase()) {
+				first.play(midi);
+				first.light([midi]);
+				break;
+			}
+		}
+	});
+</script>

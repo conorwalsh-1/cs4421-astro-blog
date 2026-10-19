@@ -5,8 +5,8 @@
  */
 
 :root {
-	--accent: #2337ff;
-	--accent-dark: #000d8a;
+	--accent: #5b2bd6;
+	--accent-dark: #2e0f86;
 	--page-bg: #ffffff;
 	--surface: #ffffff;
 	--black: 15, 18, 25;
@@ -20,8 +20,8 @@
 	color-scheme: light;
 }
 :root[data-theme='dark'] {
-	--accent: #9db5ff;
-	--accent-dark: #c3d0ff;
+	--accent: #b9a2ff;
+	--accent-dark: #d9ccff;
 	--page-bg: #11151d;
 	--surface: #1b2230;
 	--black: 244, 247, 252;
