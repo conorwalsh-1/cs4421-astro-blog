@@ -6,7 +6,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 // Astro build output, resolved from this file so `cdk deploy` works from any directory.
-const SITE_DIST = path.resolve(__dirname, '../../dist');
+// With the Node adapter (Week 5) Astro writes prerendered pages to dist/client.
+const SITE_DIST = path.resolve(__dirname, '../../dist/client');
 
 export class StaticSiteStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {

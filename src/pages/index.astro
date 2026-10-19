@@ -1,4 +1,7 @@
 ---
+// Prerendered at build time so the same page is served from S3/CloudFront and the container.
+export const prerender = true;
+
 import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import ColourKeyboard from '../components/ColourKeyboard.astro';
