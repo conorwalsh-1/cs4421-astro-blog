@@ -8,11 +8,13 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { SCRIABIN_COLOURS } from '../utils/scriabin';
 
-type Props = Omit<CollectionEntry<'blog'>['data'], 'author'> & {
+type Props = Omit<CollectionEntry<'blog'>['data'], 'author' | 'composer'> & {
 	author?: CollectionEntry<'authors'>['data'];
+	/** The composer the page is about; the page takes on their colour palette. */
+	composer?: CollectionEntry<'composers'>;
 };
 
-const { title, description, pubDate, updatedDate, heroImage, author, key } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, author, key, composer } = Astro.props;
 const keyColour = key ? SCRIABIN_COLOURS[key] : undefined;
 ---
 
@@ -76,7 +78,7 @@ const keyColour = key ? SCRIABIN_COLOURS[key] : undefined;
 	<body>
 		<Header />
 		<main>
-			<article>
+			<article data-palette={composer?.data.palette}>
 				<div class="hero-image">
 					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
 					{!heroImage && keyColour && <div class="key-banner" style={`--key-colour: ${keyColour.hex}`} />}
@@ -95,6 +97,13 @@ const keyColour = key ? SCRIABIN_COLOURS[key] : undefined;
 						</div>
 						<h1>{title}</h1>
 						{key && keyColour && <p class="key-label">In {key.replace('#', '♯')}: {keyColour.name}</p>}
+						{
+							composer && (
+								<p class="key-label">
+									About <a href={`/composers/${composer.id}/`}>{composer.data.name}</a>
+								</p>
+							)
+						}
 						<hr />
 					</div>
 					<slot />
