@@ -118,10 +118,10 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 			.transport .primary {
 				border-color: var(--accent);
 				background: var(--accent);
-				color: #fff;
+				color: var(--on-accent);
 			}
 			.transport .primary:hover:not(:disabled) {
-				color: #fff;
+				color: var(--on-accent);
 				filter: brightness(1.1);
 			}
 			.speed {
@@ -215,8 +215,8 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 </html>
 
 <script>
+	import { keyboardOutput } from '../utils/keyboard-output';
 	import { loadScore } from '../utils/load-score';
-	import { audioNow, silenceAll, strike } from '../utils/piano';
 	import { formatClock, type Score } from '../utils/score';
 	import { ScorePlayer, type PlayerState } from '../utils/score-player';
 	import { noteName } from '../utils/scriabin';
@@ -237,7 +237,6 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 	let player: ScorePlayer | undefined;
 	let score: Score | undefined;
 	let dragging = false;
-	const pendingLights = new Set<ReturnType<typeof setTimeout>>();
 
 	const setStatus = (message: string, isError = false) => {
 		statusEl.textContent = message;
@@ -250,38 +249,21 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 		clock.value = `${formatClock(position)} / ${formatClock(score.duration)}`;
 	};
 
-	const clearLights = () => {
-		pendingLights.forEach(clearTimeout);
-		pendingLights.clear();
-	};
+	const output = keyboardOutput(keyboard, {
+		onProgress: (position) => showProgress(position),
+		onStateChange: (state) => showState(state),
+	});
 
 	const showState = (state: PlayerState) => {
 		playButton.textContent = state === 'playing' ? '❚❚ Pause' : '▶ Play';
 		stopButton.disabled = state === 'stopped' && (player?.position ?? 0) === 0;
-		if (state !== 'playing') clearLights();
+		if (state !== 'playing') output.clearLights();
 	};
 
 	function load(newScore: Score) {
 		player?.stop();
 		score = newScore;
-		player = new ScorePlayer(newScore, {
-			now: audioNow,
-			playNote: (midi, at, velocity, duration) => strike(midi, 0, velocity, duration, at),
-			lightNotes: (midis, delay, durations) => {
-				const timer = setTimeout(() => {
-					pendingLights.delete(timer);
-					keyboard.dispatchEvent(
-						new CustomEvent('colour-keyboard:light', {
-							detail: { midis, durations: durations.map((seconds) => Math.max(0.12, seconds)) },
-						}),
-					);
-				}, delay * 1000);
-				pendingLights.add(timer);
-			},
-			silence: silenceAll,
-			onProgress: showProgress,
-			onStateChange: showState,
-		});
+		player = new ScorePlayer(newScore, output);
 		player.setSpeed(Number(speedSelect.value));
 
 		const pitches = newScore.notes.map((note) => note.midi);
@@ -358,7 +340,7 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 	});
 	seek.addEventListener('change', () => {
 		dragging = false;
-		clearLights();
+		output.clearLights();
 		player?.seek(Number(seek.value));
 	});
 

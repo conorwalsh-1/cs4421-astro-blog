@@ -1,0 +1,132 @@
+---
+export const prerender = true;
+
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import LifespanTimeline from '../../components/LifespanTimeline.astro';
+import { SITE_TITLE } from '../../consts';
+import { PALETTES } from '../../utils/palettes';
+
+const composers = (await getCollection('composers')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Composers | ${SITE_TITLE}`}
+			description="Seven composers who changed the piano, from Bach to Marc-André Hamelin."
+		/>
+		<style>
+			main {
+				width: 960px;
+			}
+			.cards {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+				gap: 1.25rem;
+				margin: 2rem 0 0;
+				padding: 0;
+				list-style: none;
+			}
+			.card {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				overflow: hidden;
+				border-radius: 14px;
+				background: var(--surface);
+				box-shadow: 0 2px 10px rgba(var(--black), 8%);
+				color: rgb(var(--gray-dark));
+				text-decoration: none;
+				transition:
+					transform 0.15s ease,
+					box-shadow 0.15s ease;
+			}
+			.card:hover,
+			.card:focus-visible {
+				transform: translateY(-3px);
+				box-shadow: var(--box-shadow);
+			}
+			.swatch {
+				display: grid;
+				grid-template-columns: repeat(12, 1fr);
+				height: 2.75rem;
+				background: var(--keyboard-bg);
+			}
+			.swatch span {
+				margin: 0.5rem 1px 0;
+				border-radius: 0 0 3px 3px;
+			}
+			.body {
+				display: flex;
+				flex: 1;
+				flex-direction: column;
+				gap: 0.3rem;
+				padding: 1rem 1.1rem 1.2rem;
+			}
+			.era {
+				margin: 0;
+				color: var(--accent);
+				font-size: 0.7em;
+				font-weight: 700;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+			.card h2 {
+				margin: 0;
+				font-size: 1.35em;
+			}
+			.years {
+				margin: 0;
+				color: rgb(var(--gray));
+				font-size: 0.8em;
+			}
+			.tagline {
+				margin: 0.4rem 0 0;
+				font-size: 0.85em;
+				line-height: 1.5;
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Composers through the ages</h1>
+			<p>
+				Three centuries of piano music, from Bach's harpsichord to today's concert grand. Each composer has a
+				profile, a demo you can hear on the visual piano, and a colour theme. Try it on the whole site with the
+				theme picker at the top of the page.
+			</p>
+
+			<LifespanTimeline composers={composers} />
+
+			<ol class="cards">
+				{
+					composers.map(({ id, data }) => (
+						<li>
+							<a class="card" href={`/composers/${id}/`} data-palette={data.palette}>
+								<div class="swatch" aria-hidden="true">
+									{PALETTES[data.palette].pitchColours.map((colour) => (
+										<span style={`background: ${colour}`} />
+									))}
+								</div>
+								<div class="body">
+									<p class="era">{data.era}</p>
+									<h2>{data.name}</h2>
+									<p class="years">
+										{data.died ? `${data.born}–${data.died}` : `Born ${data.born}`} · {data.birthplace}
+									</p>
+									<p class="tagline">{data.tagline}</p>
+								</div>
+							</a>
+						</li>
+					))
+				}
+			</ol>
+		</main>
+		<Footer />
+	</body>
+</html>

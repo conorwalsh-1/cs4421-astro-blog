@@ -13,6 +13,8 @@ export const DEFAULT_PALETTE: PaletteId = 'concert';
 /** Page backgrounds the accent colour must stay readable on (see global.css). */
 export const LIGHT_PAGE_BACKGROUND = '#ffffff';
 export const DARK_PAGE_BACKGROUND = '#11151d';
+/** Text colour on accent-coloured backgrounds (buttons), per mode. */
+export const ON_ACCENT = { light: '#ffffff', dark: '#10131a' } as const;
 
 export interface Palette {
 	id: PaletteId;
@@ -161,8 +163,8 @@ const variables = (p: Palette, mode: 'light' | 'dark') =>
 export function paletteCss(): string {
 	const defaults = PALETTES[DEFAULT_PALETTE];
 	const rules = [
-		`:root { ${variables(defaults, 'light')} }`,
-		`:root[data-theme='dark'] { --accent: ${defaults.accent.dark}; }`,
+		`:root { ${variables(defaults, 'light')} --on-accent: ${ON_ACCENT.light}; }`,
+		`:root[data-theme='dark'] { --accent: ${defaults.accent.dark}; --on-accent: ${ON_ACCENT.dark}; }`,
 	];
 	for (const p of Object.values(PALETTES)) {
 		rules.push(`:root[data-palette='${p.id}'], [data-palette='${p.id}'] { ${variables(p, 'light')} }`);

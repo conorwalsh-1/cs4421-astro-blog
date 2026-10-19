@@ -9,6 +9,7 @@ import {
 	isPaletteId,
 	keyColour,
 	LIGHT_PAGE_BACKGROUND,
+	ON_ACCENT,
 	PALETTE_IDS,
 	PALETTES,
 	paletteCss,
@@ -67,6 +68,12 @@ describe('palettes', () => {
 		const { accent } = PALETTES[id];
 		expect(contrastRatio(accent.light, LIGHT_PAGE_BACKGROUND)).toBeGreaterThanOrEqual(4.5);
 		expect(contrastRatio(accent.dark, DARK_PAGE_BACKGROUND)).toBeGreaterThanOrEqual(4.5);
+	});
+
+	it.each(PALETTE_IDS)('keeps button text readable on the %s accent in light and dark mode', (id) => {
+		const { accent } = PALETTES[id];
+		expect(contrastRatio(ON_ACCENT.light, accent.light)).toBeGreaterThanOrEqual(4.5);
+		expect(contrastRatio(ON_ACCENT.dark, accent.dark)).toBeGreaterThanOrEqual(4.5);
 	});
 
 	it("keeps Scriabin's own colours and names unchanged", () => {

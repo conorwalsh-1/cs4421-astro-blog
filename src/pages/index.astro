@@ -8,9 +8,11 @@ import ColourKeyboard from '../components/ColourKeyboard.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import LifespanTimeline from '../components/LifespanTimeline.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { SCRIABIN_COLOURS } from '../utils/scriabin';
+import { PALETTES } from '../utils/palettes';
 
+const composers = (await getCollection('composers')).sort((a, b) => a.data.order - b.data.order);
 const latest = (await getCollection('blog'))
 	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 	.slice(0, 3);
@@ -21,68 +23,112 @@ const latest = (await getCollection('blog'))
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
+			main {
+				width: 960px;
+			}
 			.eyebrow {
 				margin: 0;
-				color: rgb(var(--gray));
+				color: var(--accent);
 				font-size: 0.8em;
 				font-weight: 700;
 				letter-spacing: 0.08em;
 				text-transform: uppercase;
+			}
+			.intro {
+				max-width: 46rem;
+			}
+			.composer-chips {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				margin: 1.5rem 0 0;
+				padding: 0;
+				list-style: none;
+			}
+			.composer-chips a {
+				display: inline-flex;
+				gap: 0.45rem;
+				align-items: center;
+				padding: 0.3em 0.85em;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 999px;
+				background: var(--surface);
+				color: rgb(var(--black));
+				font-size: 0.8em;
+				text-decoration: none;
+			}
+			.composer-chips a:hover,
+			.composer-chips a:focus-visible {
+				border-color: var(--accent);
+				color: var(--accent);
+			}
+			.dot {
+				width: 0.7em;
+				height: 0.7em;
+				border-radius: 50%;
+				background: var(--dot);
 			}
 			.latest {
 				padding: 0;
 				list-style: none;
 			}
 			.latest li {
-				display: flex;
-				gap: 0.75rem;
-				align-items: baseline;
-				margin-bottom: 0.5rem;
-			}
-			.dot {
-				flex: 0 0 auto;
-				width: 0.8em;
-				height: 0.8em;
-				border-radius: 50%;
-				background: var(--key-colour);
+				margin-bottom: 0.6rem;
 			}
 			.latest time {
 				color: rgb(var(--gray));
 				font-size: 0.8em;
+			}
+			.more {
+				font-size: 0.85em;
 			}
 		</style>
 	</head>
 	<body>
 		<Header />
 		<main>
-			<p class="eyebrow">A Scriabin piano journal</p>
-			<h1>Mysterium</h1>
-			<p>
-				Alexander Scriabin heard keys as colours: C was red, D yellow, F♯ a brilliant blue.
-				In <em>Prometheus</em> he even wrote a part for a keyboard of light. This site is my practice
-				journal for his piano music, with an instrument you can play in his colours.
+			<p class="eyebrow">Classical piano over the ages</p>
+			<h1>{SITE_TITLE}</h1>
+			<p class="intro">
+				From Bach's preludes to the dazzling études of Marc-André Hamelin, three centuries of composers have
+				reinvented what a keyboard can do. Play the piano below with your mouse or computer keyboard, then meet
+				the composers. Each has a demo you can hear and a colour theme of their own (try the picker at the top
+				of the page; <strong>Scriabin</strong> uses the colours he heard in each key).
 			</p>
 
-			<ColourKeyboard />
+			<ColourKeyboard label="Visual piano" />
+
+			<h2>Through the ages</h2>
+			<LifespanTimeline composers={composers} />
+			<ul class="composer-chips">
+				{
+					composers.map(({ id, data }) => (
+						<li>
+							<a href={`/composers/${id}/`}>
+								<span class="dot" style={`--dot: ${PALETTES[data.palette].accent.light}`} aria-hidden="true" />
+								{data.shortName} · {data.era}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+			<p class="more"><a href="/composers">Meet all the composers →</a></p>
 
 			<h2>From the journal</h2>
 			<ul class="latest">
 				{
 					latest.map((post) => (
 						<li>
-							<span
-								class="dot"
-								style={`--key-colour: ${post.data.key ? SCRIABIN_COLOURS[post.data.key].hex : 'var(--accent)'}`}
-							/>
-							<span>
-								<a href={`/blog/${post.id}/`}>{post.data.title}</a>
-								<br />
-								<FormattedDate date={post.data.pubDate} />
-							</span>
+							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+							<br />
+							<FormattedDate date={post.data.pubDate} />
 						</li>
 					))
 				}
 			</ul>
+			<p class="more">
+				Or load your own MIDI file or sheet music in the <a href="/player">score player</a>.
+			</p>
 		</main>
 		<Footer />
 	</body>
