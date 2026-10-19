@@ -3,6 +3,7 @@ title: 'Hearing in colour: the clavier à lumières'
 description: 'Scriabin wrote a part for light into Prometheus. What colours did he hear, and why do they follow the circle of fifths?'
 pubDate: 'Sep 14 2026'
 author: 'conor-walsh'
+composer: 'scriabin'
 key: 'F#'
 ---
 
