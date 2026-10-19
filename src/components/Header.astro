@@ -5,16 +5,9 @@ import HeaderLink from './HeaderLink.astro';
 ---
 
 <header>
-	<nav>
-		<h2><a href="/">{SITE_TITLE}</a></h2>
-		<div class="internal-links">
-			<HeaderLink href="/">Home</HeaderLink>
-			<HeaderLink href="/composers">Composers</HeaderLink>
-			<HeaderLink href="/blog">Journal</HeaderLink>
-			<HeaderLink href="/player">Player</HeaderLink>
-			<HeaderLink href="/listening-room">Listening room</HeaderLink>
-			<HeaderLink href="/about">About</HeaderLink>
-		</div>
+	<div class="masthead">
+		<p class="tagline">Classical piano over the ages</p>
+		<a class="wordmark" href="/">{SITE_TITLE}</a>
 		<div class="controls">
 			<label class="palette-picker">
 				<span class="sr-only">Colour theme</span>
@@ -29,71 +22,106 @@ import HeaderLink from './HeaderLink.astro';
 				</select>
 			</label>
 			<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode">
-				<svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+				<svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
 					<circle cx="12" cy="12" r="4"></circle>
 					<path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"></path>
 				</svg>
-				<svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+				<svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
 					<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"></path>
 				</svg>
 				<span class="sr-only" data-theme-label>Switch to dark mode</span>
 			</button>
 		</div>
+	</div>
+	<nav aria-label="Main">
+		<div class="internal-links">
+			<HeaderLink href="/">Home</HeaderLink>
+			<HeaderLink href="/composers">Composers</HeaderLink>
+			<HeaderLink href="/blog">Journal</HeaderLink>
+			<HeaderLink href="/player">Player</HeaderLink>
+			<HeaderLink href="/listening-room">Listening room</HeaderLink>
+			<HeaderLink href="/about">About</HeaderLink>
+		</div>
 	</nav>
 </header>
 <style>
 	header {
-		margin: 0;
 		padding: 0 1em;
-		background: var(--surface);
-		box-shadow: 0 2px 8px rgba(var(--black), 5%);
+		border-bottom: 3px double var(--rule);
+		background: var(--page-bg);
 	}
-	h2 {
-		margin: 0 0.5em 0 0;
-		font-size: 1em;
+	/* Wordmark centred like a programme masthead, with the tagline and controls either side. */
+	.masthead {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		gap: 1rem;
+		align-items: center;
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 0.9rem 0 0.4rem;
 	}
-
-	h2 a,
-	h2 a.active {
+	.tagline {
+		margin: 0;
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+		font-style: italic;
+	}
+	.wordmark {
+		color: rgb(var(--black));
+		font-family: var(--font-display);
+		font-size: 2.1em;
+		font-style: italic;
+		font-weight: 500;
+		letter-spacing: 0.01em;
+		line-height: 1;
 		text-decoration: none;
 	}
+	.wordmark:hover {
+		color: var(--accent);
+	}
 	nav {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
+		max-width: 1100px;
+		margin: 0 auto;
 	}
 	.internal-links {
 		display: flex;
+		justify-content: center;
+		gap: 0.2rem 1.4rem;
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
 	nav a {
-		padding: 1em 0.5em;
-		color: rgb(var(--black));
-		border-bottom: 4px solid transparent;
+		padding: 0.35rem 0 0.55rem;
+		border-bottom: 2px solid transparent;
+		color: rgb(var(--gray-dark));
+		font-variant-caps: all-small-caps;
+		font-weight: 600;
+		letter-spacing: 0.12em;
 		text-decoration: none;
 		white-space: nowrap;
 	}
+	nav a:hover {
+		color: var(--accent);
+	}
 	nav a.active {
-		text-decoration: none;
 		border-bottom-color: var(--accent);
+		color: var(--accent);
 	}
 	.controls {
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
-		margin-left: auto;
-		padding: 0.5rem 0;
+		justify-content: flex-end;
 	}
 	.palette-picker select {
 		max-width: 12rem;
-		padding: 0.35rem 0.5rem;
-		border: 1px solid rgb(var(--gray-light));
-		border-radius: 999px;
+		padding: 0.3rem 0.5rem;
+		border: 1px solid var(--rule);
+		border-radius: 4px;
 		background: var(--surface);
 		color: rgb(var(--black));
 		font: inherit;
-		font-size: 0.75em;
+		font-size: 0.72em;
 		cursor: pointer;
 	}
 	.palette-picker select:hover,
@@ -103,10 +131,10 @@ import HeaderLink from './HeaderLink.astro';
 	.theme-toggle {
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.2rem;
+		height: 2.2rem;
 		padding: 0;
-		border: 1px solid rgb(var(--gray-light));
+		border: 1px solid var(--rule);
 		border-radius: 50%;
 		background: var(--surface);
 		color: rgb(var(--black));
@@ -131,16 +159,24 @@ import HeaderLink from './HeaderLink.astro';
 	:root[data-theme='dark'] .moon-icon {
 		display: block;
 	}
-	/* Phones: title and controls on top, the links in their own scrollable row. */
+	/* Narrow screens: wordmark left, controls right, links in a scrollable row. */
 	@media (max-width: 860px) {
+		.masthead {
+			grid-template-columns: auto 1fr;
+		}
+		.tagline {
+			display: none;
+		}
 		.internal-links {
-			order: 3;
-			width: 100%;
+			justify-content: flex-start;
 		}
 	}
 	@media (max-width: 480px) {
+		.wordmark {
+			font-size: 1.7em;
+		}
 		.palette-picker select {
-			max-width: 9.5rem;
+			max-width: 8.5rem;
 		}
 	}
 </style>
