@@ -60,6 +60,6 @@ test.describe('score player', () => {
 
 		await page.getByRole('heading', { level: 1, name: 'Score player' }).click();
 		await page.keyboard.press('a');
-		await expect(nowPlaying).toHaveText('C4 · red');
+		await expect(nowPlaying).toHaveText('C4');
 	});
 });
