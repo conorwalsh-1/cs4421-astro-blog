@@ -30,6 +30,10 @@ jobs:
 
       - run: npm ci && npm run test:unit -- --run # 1. Quality Gate
 
+      # The CDK app also defines StaticSiteStack, which needs dist/client to synthesize.
+      - name: Build Astro Site
+        run: npm run build
+
       - name: Install CDK Dependencies
         run: npm ci --prefix cdk
 
