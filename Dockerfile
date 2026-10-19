@@ -1,5 +1,5 @@
 # STAGE 1: Build & Compile
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build && npm prune --omit=dev
 
 # STAGE 2: Lean Production Runner
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4321
 COPY --from=builder /app/package*.json ./
