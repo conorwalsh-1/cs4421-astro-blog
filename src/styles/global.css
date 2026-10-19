@@ -167,7 +167,7 @@ hr,
 	margin: 2.5em auto;
 	overflow: visible;
 	border: 0;
-	background: linear-gradient(90deg, transparent, var(--rule) 15%, var(--rule) 42%, transparent 42%, transparent 58%, var(--rule) 58%, var(--rule) 85%, transparent);
+	background: linear-gradient(90deg, transparent, var(--rule) 15%, var(--rule) 47%, transparent 47%, transparent 53%, var(--rule) 53%, var(--rule) 85%, transparent);
 }
 hr::before,
 .ornament::before {
@@ -205,6 +205,13 @@ hr::before,
 	font-variant-caps: all-small-caps;
 	font-weight: 600;
 	letter-spacing: 0.14em;
+}
+
+/* A label directly above a heading sits close to it. */
+.eyebrow + h1,
+.eyebrow + h2,
+.eyebrow + h3 {
+	margin-top: 0.15em;
 }
 
 /* An illuminated first letter for biographies and essays. */
