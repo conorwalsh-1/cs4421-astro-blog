@@ -1,12 +1,17 @@
 // @ts-check
 
 import mdx from '@astrojs/mdx';
+import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://example.com',
+	output: 'server', // Enables on-demand server rendering
+	adapter: node({
+		mode: 'standalone', // Self-contained HTTP server listening on a port
+	}),
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{
