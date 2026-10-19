@@ -1,0 +1,4 @@
+# Binary assets: never convert line endings
+*.mid binary
+*.midi binary
+*.mxl binary
