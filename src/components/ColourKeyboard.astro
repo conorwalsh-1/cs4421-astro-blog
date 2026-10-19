@@ -1,17 +1,18 @@
 ---
+import { DEFAULT_OCTAVE, keyForMidi, mappedRange, PIANO_HIGHEST, PIANO_LOWEST } from '../utils/keymap';
 import { colourOf, noteName, pitchClassOf } from '../utils/scriabin';
 
 interface Props {
-	/** Lowest MIDI note on the keyboard (defaults to C4). */
+	/** Lowest MIDI note on the keyboard (defaults to A0, a full 88-key piano). */
 	from?: number;
-	/** Highest MIDI note (defaults to E6, so the Mystic chord on C4 fits). */
+	/** Highest MIDI note (defaults to C8). */
 	to?: number;
+	/** Root of the Mystic chord and Prometheus scale demos (defaults to C4). */
+	root?: number;
 }
 
-const { from = 60, to = 88 } = Astro.props;
-
-// Computer-keyboard shortcuts for the first 17 keys, laid out like a piano.
-const SHORTCUTS = ['a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k', 'o', 'l', 'p', ';'];
+const { from = PIANO_LOWEST, to = PIANO_HIGHEST, root = 60 } = Astro.props;
+const { low, high } = mappedRange(DEFAULT_OCTAVE);
 
 const keys = Array.from({ length: to - from + 1 }, (_, i) => {
 	const midi = from + i;
@@ -20,13 +21,21 @@ const keys = Array.from({ length: to - from + 1 }, (_, i) => {
 		name: noteName(midi),
 		black: pitchClassOf(midi).includes('#'),
 		colour: colourOf(midi),
-		shortcut: SHORTCUTS[i],
+		shortcut: keyForMidi(midi, DEFAULT_OCTAVE),
+		mapped: midi >= low && midi <= high,
+		isC: pitchClassOf(midi) === 'C',
 	};
 });
 const whiteCount = keys.filter((key) => !key.black).length;
 ---
 
-<section class="colour-keyboard" data-colour-keyboard data-root={from} aria-label="Scriabin colour keyboard">
+<section
+	class="colour-keyboard"
+	data-colour-keyboard
+	data-root={root}
+	data-octave={DEFAULT_OCTAVE}
+	aria-label="Scriabin colour keyboard"
+>
 	<div class="luce" data-luce aria-hidden="true"></div>
 	<div class="readout">
 		<p class="now-playing" data-now-playing aria-live="polite">
@@ -38,19 +47,31 @@ const whiteCount = keys.filter((key) => !key.black).length;
 			<label><input type="checkbox" data-show-colours checked /> Colours on keys</label>
 		</div>
 	</div>
-	<div class="keys-scroll">
+	<div class="octave-bar">
+		<button type="button" data-octave-shift="-1" aria-label="Shift keys down an octave (Z)" title="Octave down (Z)">
+			◀ Z
+		</button>
+		<span class="octave-label" data-octave-label aria-live="polite">Keys play {noteName(low)}–{noteName(high)}</span>
+		<button type="button" data-octave-shift="1" aria-label="Shift keys up an octave (X)" title="Octave up (X)">
+			X ▶
+		</button>
+	</div>
+	<div class="keys-scroll" data-keys-scroll>
 		<div class="keys" style={`--white-count: ${whiteCount}`}>
 			{
 				keys.map((key) => (
 					<button
 						type="button"
-						class:list={['key', key.black ? 'black' : 'white']}
+						class:list={['key', key.black ? 'black' : 'white', { mapped: key.mapped }]}
 						style={`--key-colour: ${key.colour}`}
 						data-midi={key.midi}
-						data-shortcut={key.shortcut}
 						aria-label={key.name}
+						tabindex="-1"
 					>
-						{key.shortcut && !key.black && <span class="shortcut">{key.shortcut.toUpperCase()}</span>}
+						<span class="shortcut" data-shortcut-label>
+							{key.shortcut?.toUpperCase()}
+						</span>
+						{key.isC && <span class="octave-name">{key.name}</span>}
 					</button>
 				))
 			}
@@ -85,20 +106,32 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		gap: 0.75rem;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 1rem;
+		margin-bottom: 0.75rem;
 		font-size: 0.8em;
 	}
 	.now-playing {
 		margin: 0;
 		min-height: 1.7em;
 	}
-	.controls {
+	.controls,
+	.octave-bar {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		align-items: center;
 	}
-	.controls button {
+	.octave-bar {
+		position: relative;
+		margin-bottom: 0.75rem;
+		font-size: 0.75em;
+	}
+	.octave-label {
+		min-width: 11em;
+		text-align: center;
+		color: #c9c3e6;
+	}
+	.controls button,
+	.octave-bar button {
 		padding: 0.35em 0.8em;
 		border: 1px solid rgba(255, 255, 255, 0.35);
 		border-radius: 999px;
@@ -108,22 +141,30 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		cursor: pointer;
 	}
 	.controls button:hover,
-	.controls button:focus-visible {
+	.controls button:focus-visible,
+	.octave-bar button:hover,
+	.octave-bar button:focus-visible {
 		background: rgba(255, 255, 255, 0.2);
+	}
+	.octave-bar button:disabled {
+		opacity: 0.35;
+		cursor: default;
 	}
 	.keys-scroll {
 		position: relative;
 		overflow-x: auto;
+		scrollbar-color: #5b2bd6 transparent;
 	}
 	.keys {
 		position: relative;
 		display: flex;
-		min-width: calc(var(--white-count) * 34px);
+		width: calc(var(--white-count) * 34px);
 		height: 180px;
 		user-select: none;
-		touch-action: none;
+		touch-action: pan-x;
 	}
 	.key {
+		position: relative;
 		padding: 0;
 		border: 0;
 		cursor: pointer;
@@ -134,16 +175,20 @@ const whiteCount = keys.filter((key) => !key.black).length;
 	.white {
 		flex: 1;
 		display: flex;
-		align-items: flex-end;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
 		margin-right: 2px;
 		border-radius: 0 0 6px 6px;
 		background: linear-gradient(#fbfaf7 70%, color-mix(in srgb, var(--key-colour) var(--tint, 0%), #fbfaf7));
 	}
 	.black {
-		position: relative;
 		z-index: 1;
 		flex: 0 0 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
 		width: 22px;
 		height: 62%;
 		margin: 0 -12px 0 -12px;
@@ -153,47 +198,145 @@ const whiteCount = keys.filter((key) => !key.black).length;
 	.show-colours .key {
 		--tint: 70%;
 	}
+	/* Keys currently reachable from the computer keyboard. */
+	.white.mapped {
+		box-shadow: inset 0 3px 0 #8f6bff;
+	}
+	.black.mapped {
+		box-shadow: inset 0 3px 0 #b9a2ff;
+	}
 	.key.active {
 		background: var(--key-colour);
 		box-shadow: 0 0 24px var(--key-colour);
 	}
 	.shortcut {
-		margin-bottom: 0.4rem;
 		color: #6b6880;
 		font-size: 0.6em;
+		line-height: 1.4;
+	}
+	.black .shortcut {
+		margin-bottom: 0.3rem;
+		color: #b4aed0;
+	}
+	.white .shortcut {
+		margin-bottom: 0.3rem;
+	}
+	/* Octave name (C1…C8) at the top of every C key, for orientation while scrolling. */
+	.octave-name {
+		position: absolute;
+		top: 0.4rem;
+		left: 0;
+		right: 0;
+		color: #8f8aa8;
+		font-size: 0.5em;
+		text-align: center;
 	}
 </style>
 
 <script>
+	import {
+		clampOctave,
+		DEFAULT_OCTAVE,
+		keyForMidi,
+		mappedRange,
+		midiForKey,
+		OCTAVE_DOWN_KEY,
+		OCTAVE_UP_KEY,
+	} from '../utils/keymap';
 	import { strike } from '../utils/piano';
 	import { colourOf, mysticChord, noteName, SCRIABIN_COLOURS, pitchClassOf } from '../utils/scriabin';
+
+	/** Detail of the `colour-keyboard:light` event other components dispatch to light keys. */
+	export interface LightDetail {
+		midis: number[];
+		/** Seconds the keys stay lit (defaults to a short flash). */
+		duration?: number;
+		/** Text for the readout; defaults to the note names and colours. */
+		label?: string;
+	}
 
 	function setUpKeyboard(root: HTMLElement) {
 		const luce = root.querySelector<HTMLElement>('[data-luce]');
 		const nowPlaying = root.querySelector<HTMLElement>('[data-now-playing]');
+		const octaveLabel = root.querySelector<HTMLElement>('[data-octave-label]');
+		const scroller = root.querySelector<HTMLElement>('[data-keys-scroll]');
+		const shiftButtons = root.querySelectorAll<HTMLButtonElement>('[data-octave-shift]');
 		const keys = new Map<number, HTMLElement>();
 		root.querySelectorAll<HTMLElement>('[data-midi]').forEach((key) => keys.set(Number(key.dataset.midi), key));
+		// How many times each key is currently lit, so overlapping notes don't switch it off early.
+		const litCount = new Map<number, number>();
+		let octave = DEFAULT_OCTAVE;
 
-		const light = (midis: number[]) => {
-			const last = midis[midis.length - 1];
-			const stops = midis.map(colourOf).join(', ');
-			if (luce) luce.style.setProperty('--luce', midis.length > 1 ? colourOf(midis[0]) : colourOf(last));
-			if (luce && midis.length > 1) luce.style.background = `linear-gradient(90deg, ${stops})`;
-			else if (luce) luce.style.removeProperty('background');
-			if (nowPlaying) {
-				nowPlaying.textContent = midis
-					.map((midi) => `${noteName(midi)} · ${SCRIABIN_COLOURS[pitchClassOf(midi)].name}`)
-					.join('  —  ');
+		const scrollToSpan = (low: number, high: number, behavior: ScrollBehavior) => {
+			const first = keys.get(low);
+			const last = keys.get(high);
+			if (!scroller || !first || !last) return;
+			const centre = (first.offsetLeft + last.offsetLeft + last.offsetWidth) / 2;
+			scroller.scrollTo({ left: centre - scroller.clientWidth / 2, behavior });
+		};
+
+		// Scroll only when a key is out of view, so playback doesn't jitter.
+		const ensureVisible = (midis: number[]) => {
+			if (!scroller || midis.length === 0) return;
+			const lowest = Math.min(...midis);
+			const highest = Math.max(...midis);
+			const first = keys.get(lowest);
+			const last = keys.get(highest);
+			if (!first || !last) return;
+			const left = scroller.scrollLeft;
+			const right = left + scroller.clientWidth;
+			if (first.offsetLeft < left || last.offsetLeft + last.offsetWidth > right) {
+				scrollToSpan(lowest, highest, 'smooth');
 			}
+		};
+
+		const setOctave = (next: number, behavior: ScrollBehavior = 'smooth') => {
+			octave = clampOctave(next);
+			root.dataset.octave = String(octave);
+			const { low, high } = mappedRange(octave);
+			for (const [midi, key] of keys) {
+				key.classList.toggle('mapped', midi >= low && midi <= high);
+				const label = key.querySelector<HTMLElement>('[data-shortcut-label]');
+				if (label) label.textContent = keyForMidi(midi, octave)?.toUpperCase() ?? '';
+			}
+			if (octaveLabel) octaveLabel.textContent = `Keys play ${noteName(low)}–${noteName(high)}`;
+			shiftButtons.forEach((button) => {
+				const step = Number(button.dataset.octaveShift);
+				button.disabled = clampOctave(octave + step) === octave;
+			});
+			scrollToSpan(low, high, behavior);
+		};
+
+		const describe = (midis: number[]) =>
+			midis.map((midi) => `${noteName(midi)} · ${SCRIABIN_COLOURS[pitchClassOf(midi)].name}`).join('  —  ');
+
+		const light = (midis: number[], label?: string) => {
+			if (midis.length === 0) return;
+			const stops = midis.map(colourOf).join(', ');
+			if (luce) {
+				luce.style.setProperty('--luce', colourOf(midis[0]));
+				if (midis.length > 1) luce.style.background = `linear-gradient(90deg, ${stops})`;
+				else luce.style.removeProperty('background');
+			}
+			if (nowPlaying) nowPlaying.textContent = label ?? describe(midis);
+			ensureVisible(midis);
+		};
+
+		const flash = (midi: number, seconds: number) => {
+			const key = keys.get(midi);
+			if (!key) return;
+			litCount.set(midi, (litCount.get(midi) ?? 0) + 1);
+			key.classList.add('active');
+			window.setTimeout(() => {
+				const remaining = (litCount.get(midi) ?? 1) - 1;
+				litCount.set(midi, remaining);
+				if (remaining <= 0) key.classList.remove('active');
+			}, seconds * 1000);
 		};
 
 		const play = (midi: number, when = 0) => {
 			strike(midi, when);
-			const key = keys.get(midi);
-			window.setTimeout(() => {
-				key?.classList.add('active');
-				window.setTimeout(() => key?.classList.remove('active'), 450);
-			}, when * 1000);
+			window.setTimeout(() => flash(midi, 0.45), when * 1000);
 		};
 
 		root.addEventListener('pointerdown', (event) => {
@@ -204,17 +347,28 @@ const whiteCount = keys.filter((key) => !key.black).length;
 			light([midi]);
 		});
 
-		const rootMidi = Number(root.dataset.root ?? 60);
+		shiftButtons.forEach((button) =>
+			button.addEventListener('click', () => setOctave(octave + Number(button.dataset.octaveShift))),
+		);
+
+		const demoRoot = Number(root.dataset.root ?? 60);
 		root.querySelector('[data-play="mystic"]')?.addEventListener('click', () => {
-			const chord = mysticChord(rootMidi);
+			const chord = mysticChord(demoRoot);
 			chord.forEach((midi, i) => play(midi, i * 0.09));
 			light(chord);
 		});
 		root.querySelector('[data-play="scale"]')?.addEventListener('click', () => {
 			// The Prometheus scale: the Mystic chord's notes arranged within one octave.
-			const scale = [0, 2, 4, 6, 9, 10, 12].map((step) => rootMidi + step);
+			const scale = [0, 2, 4, 6, 9, 10, 12].map((step) => demoRoot + step);
 			scale.forEach((midi, i) => play(midi, i * 0.28));
 			light(scale);
+		});
+
+		// Other components (e.g. the score player) light keys without making sound.
+		root.addEventListener('colour-keyboard:light', (event) => {
+			const { midis, duration = 0.45, label } = (event as CustomEvent<LightDetail>).detail;
+			midis.forEach((midi) => flash(midi, duration));
+			light(midis, label);
 		});
 
 		const toggle = root.querySelector<HTMLInputElement>('[data-show-colours]');
@@ -222,23 +376,36 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		toggle?.addEventListener('change', syncColours);
 		syncColours();
 
-		return { keys, play, light };
+		setOctave(octave, 'instant');
+
+		return {
+			play,
+			light,
+			shiftOctave: (step: number) => setOctave(octave + step),
+			midiForKey: (key: string) => midiForKey(key, octave),
+		};
 	}
 
 	const keyboards = [...document.querySelectorAll<HTMLElement>('[data-colour-keyboard]')].map(setUpKeyboard);
 
 	// Computer-keyboard input drives the first keyboard on the page.
 	window.addEventListener('keydown', (event) => {
-		const target = event.target as HTMLElement;
-		if (event.repeat || event.metaKey || event.ctrlKey || target.closest('input, textarea, select')) return;
+		if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+		// Don't steal keys while the visitor is typing (event.target may be window or document).
+		const target = event.target;
+		if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]')) return;
 		const first = keyboards[0];
 		if (!first) return;
-		for (const [midi, key] of first.keys) {
-			if (key.dataset.shortcut === event.key.toLowerCase()) {
-				first.play(midi);
-				first.light([midi]);
-				break;
-			}
+
+		const key = event.key.toLowerCase();
+		if (key === OCTAVE_DOWN_KEY || key === OCTAVE_UP_KEY) {
+			first.shiftOctave(key === OCTAVE_UP_KEY ? 1 : -1);
+			return;
 		}
+		const midi = first.midiForKey(key);
+		if (midi === undefined) return;
+		event.preventDefault();
+		first.play(midi);
+		first.light([midi]);
 	});
 </script>
