@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('home page colour keyboard', () => {
 	test('lights a key in its palette colour when played', async ({ page }) => {
 		await page.goto('/');
-		await expect(page.getByRole('heading', { level: 1, name: 'Pianoforte' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 1, name: 'Three centuries at the keyboard' })).toBeVisible();
 
 		await page.getByRole('button', { name: 'C4', exact: true }).dispatchEvent('pointerdown');
 
@@ -32,7 +32,9 @@ test.describe('home page colour keyboard', () => {
 			clientWidth: el.clientWidth,
 		}));
 		expect(scrollWidth).toBeGreaterThan(clientWidth);
-		// Starts scrolled to middle C, where the computer keys play.
+		// Starts scrolled to middle C, where the computer keys play. Bring the piano into the
+		// page viewport first; this scrolls the page only, not the keyboard's own scroller.
+		await page.locator('.colour-keyboard').scrollIntoViewIfNeeded();
 		await expect(page.getByRole('button', { name: 'C4', exact: true })).toBeInViewport();
 	});
 
@@ -55,6 +57,7 @@ test.describe('home page colour keyboard', () => {
 		await page.keyboard.press('z');
 		await page.keyboard.press('z');
 		await expect(octaveLabel).toHaveText('Keys play C3–E4');
+		await page.locator('.colour-keyboard').scrollIntoViewIfNeeded();
 		await expect(page.getByRole('button', { name: 'C3', exact: true })).toBeInViewport();
 	});
 
