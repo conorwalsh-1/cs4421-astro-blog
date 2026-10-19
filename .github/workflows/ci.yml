@@ -36,7 +36,7 @@ jobs:
         run: npm run check
 
       - name: Run unit tests
-        run: npm run test:unit -- --run --exclude "cdk/**"
+        run: npm run test:unit -- --run
 
       - name: Build
         run: npm run build
