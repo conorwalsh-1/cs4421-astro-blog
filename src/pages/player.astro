@@ -173,14 +173,14 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 				<p><strong>Drop a score here</strong> or</p>
 				<label class="file-button">
 					Choose a file…
-					<input type="file" data-file-input accept={ACCEPTED_EXTENSIONS.join(',')} />
+					<input type="file" data-file-input accept={ACCEPTED_EXTENSIONS.join(',')} disabled />
 				</label>
 				<p class="hint">{ACCEPTED_EXTENSIONS.join('  ')}. Files stay in your browser and are never uploaded.</p>
 				<div class="demos">
 					<span class="hint">Or try a demo:</span>
 					{
 						DEMOS.map((demo) => (
-							<button type="button" data-demo={`/scores/${demo.file}`} data-demo-name={demo.file}>
+							<button type="button" data-demo={`/scores/${demo.file}`} data-demo-name={demo.file} disabled>
 								{demo.label} <span class="hint">({demo.kind})</span>
 							</button>
 						))
@@ -361,6 +361,10 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 		clearLights();
 		player?.seek(Number(seek.value));
 	});
+
+	// Controls are rendered disabled so nothing is clicked before these handlers exist.
+	fileInput.disabled = false;
+	document.querySelectorAll<HTMLButtonElement>('[data-demo]').forEach((button) => (button.disabled = false));
 
 	// Space toggles playback (when not typing or focused on a control).
 	window.addEventListener('keydown', (event) => {
