@@ -13,19 +13,31 @@ const LATIN =
 const LATIN_EXT =
 	'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF';
 
+/**
+ * @template T
+ * @param {T[]} list
+ * @returns {[T, ...T[]]}
+ */
+const nonEmpty = (list) => {
+	if (list.length === 0) throw new Error('A font family needs at least one variant');
+	return /** @type {[T, ...T[]]} */ (list);
+};
+
 /** @param {string} family @param {[number, 'normal' | 'italic'][]} styles */
 const variants = (family, styles) =>
-	styles.flatMap(([weight, style]) =>
-		/** @type {const} */ ([
-			['latin', LATIN],
-			['latin-ext', LATIN_EXT],
-		]).map(([subset, range]) => ({
-			src: [`./src/assets/fonts/${family}-${subset}-${weight}-${style}.woff2`],
-			weight,
-			style,
-			display: /** @type {const} */ ('swap'),
-			unicodeRange: /** @type {[string]} */ ([range]),
-		})),
+	nonEmpty(
+		styles.flatMap(([weight, style]) =>
+			/** @type {const} */ ([
+				['latin', LATIN],
+				['latin-ext', LATIN_EXT],
+			]).map(([subset, range]) => ({
+				src: /** @type {[string]} */ ([`./src/assets/fonts/${family}-${subset}-${weight}-${style}.woff2`]),
+				weight,
+				style,
+				display: /** @type {const} */ ('swap'),
+				unicodeRange: /** @type {[string]} */ ([range]),
+			})),
+		),
 	);
 
 // https://astro.build/config
@@ -42,7 +54,8 @@ export default defineConfig({
 			provider: fontProviders.local(),
 			name: 'EB Garamond',
 			cssVariable: '--font-text',
-			fallbacks: ['Garamond', 'Georgia', 'serif'],
+			// Symbol fonts render ♯ and ♭ (missing from Garamond) as text, not colour emoji.
+			fallbacks: ['Garamond', 'Georgia', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', 'serif'],
 			options: {
 				variants: variants('eb-garamond', [
 					[400, 'normal'],
@@ -57,7 +70,8 @@ export default defineConfig({
 			provider: fontProviders.local(),
 			name: 'Cormorant Garamond',
 			cssVariable: '--font-display',
-			fallbacks: ['Garamond', 'Georgia', 'serif'],
+			// Symbol fonts render ♯ and ♭ (missing from Garamond) as text, not colour emoji.
+			fallbacks: ['Garamond', 'Georgia', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', 'serif'],
 			options: {
 				variants: variants('cormorant-garamond', [
 					[500, 'normal'],
