@@ -11,8 +11,8 @@ export type PaletteId = (typeof PALETTE_IDS)[number];
 export const DEFAULT_PALETTE: PaletteId = 'concert';
 
 /** Page backgrounds the accent colour must stay readable on (see global.css). */
-export const LIGHT_PAGE_BACKGROUND = '#ffffff';
-export const DARK_PAGE_BACKGROUND = '#11151d';
+export const LIGHT_PAGE_BACKGROUND = '#f8f4ea';
+export const DARK_PAGE_BACKGROUND = '#15120e';
 /** Text colour on accent-coloured backgrounds (buttons), per mode. */
 export const ON_ACCENT = { light: '#ffffff', dark: '#10131a' } as const;
 
