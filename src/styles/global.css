@@ -4,9 +4,8 @@
   License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
  */
 
+/* --accent and the keyboard colours come from the composer palettes (src/utils/palettes.ts). */
 :root {
-	--accent: #5b2bd6;
-	--accent-dark: #2e0f86;
 	--page-bg: #ffffff;
 	--surface: #ffffff;
 	--black: 15, 18, 25;
@@ -20,8 +19,6 @@
 	color-scheme: light;
 }
 :root[data-theme='dark'] {
-	--accent: #b9a2ff;
-	--accent-dark: #d9ccff;
 	--page-bg: #11151d;
 	--surface: #1b2230;
 	--black: 244, 247, 252;
