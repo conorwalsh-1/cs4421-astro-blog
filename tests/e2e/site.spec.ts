@@ -18,6 +18,54 @@ test.describe('home page colour keyboard', () => {
 		await expect(page.locator('[data-now-playing]')).toContainText('C4 · red');
 		await expect(page.locator('[data-now-playing]')).toContainText('D6 · yellow');
 	});
+
+	test('is a full 88-key piano that scrolls instead of shrinking', async ({ page }) => {
+		await page.goto('/');
+
+		await expect(page.locator('.colour-keyboard .key')).toHaveCount(88);
+		await expect(page.getByRole('button', { name: 'A0', exact: true })).toBeAttached();
+		await expect(page.getByRole('button', { name: 'C8', exact: true })).toBeAttached();
+
+		const scroller = page.locator('[data-keys-scroll]');
+		const { scrollWidth, clientWidth } = await scroller.evaluate((el) => ({
+			scrollWidth: el.scrollWidth,
+			clientWidth: el.clientWidth,
+		}));
+		expect(scrollWidth).toBeGreaterThan(clientWidth);
+		// Starts scrolled to middle C, where the computer keys play.
+		await expect(page.getByRole('button', { name: 'C4', exact: true })).toBeInViewport();
+	});
+
+	test('computer keys play from the selected octave, and Z / X shift it', async ({ page }) => {
+		await page.goto('/');
+		const nowPlaying = page.locator('[data-now-playing]');
+		const octaveLabel = page.locator('[data-octave-label]');
+
+		await page.keyboard.press('a');
+		await expect(nowPlaying).toHaveText('C4 · red');
+		await page.keyboard.press('w');
+		await expect(nowPlaying).toHaveText('C#4 · violet');
+
+		await page.keyboard.press('x');
+		await expect(octaveLabel).toHaveText('Keys play C5–E6');
+		await page.keyboard.press('a');
+		await expect(nowPlaying).toHaveText('C5 · red');
+		await expect(page.locator('.key[data-midi="72"] [data-shortcut-label]')).toHaveText('A');
+
+		await page.keyboard.press('z');
+		await page.keyboard.press('z');
+		await expect(octaveLabel).toHaveText('Keys play C3–E4');
+		await expect(page.getByRole('button', { name: 'C3', exact: true })).toBeInViewport();
+	});
+
+	test('octave buttons stop at the ends of the piano', async ({ page }) => {
+		await page.goto('/');
+		const down = page.getByRole('button', { name: /down an octave/ });
+
+		for (let i = 0; i < 4; i++) await down.click();
+		await expect(page.locator('[data-octave-label]')).toHaveText('Keys play A0–E1');
+		await expect(down).toBeDisabled();
+	});
 });
 
 test.describe('journal', () => {
