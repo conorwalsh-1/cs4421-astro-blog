@@ -1,0 +1,36 @@
+name: User story
+description: A requirement written from the user's point of view, with acceptance criteria
+title: 'Story: '
+labels: [user-story]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      value: |
+        As a <type of user>,
+        I want <some capability>,
+        So that <benefit>.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria (Given-When-Then)
+      value: |
+        Scenario: <name>
+          Given <context>
+          When <action>
+          Then <observable outcome>
+    validations:
+      required: true
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of Done
+      options:
+        - label: Code authored on a feature branch
+        - label: Unit / integration / E2E tests added or updated and passing
+        - label: Lint, astro check and CI green
+        - label: Peer code review approved
+        - label: Merged into main and verified in production
