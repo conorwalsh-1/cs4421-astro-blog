@@ -148,6 +148,8 @@ const variables = (p: Palette, mode: 'light' | 'dark') =>
 	[
 		`--accent: ${p.accent[mode]};`,
 		`--keyboard-bg: ${p.keyboard};`,
+		// The keyboard panel is always dark, so it uses the dark-mode accent in both modes.
+		`--keyboard-accent: ${p.accent.dark};`,
 		...p.pitchColours.map((colour, pc) => `--pc-${pc}: ${colour};`),
 	].join(' ');
 

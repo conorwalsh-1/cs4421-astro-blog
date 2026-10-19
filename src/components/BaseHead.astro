@@ -5,6 +5,7 @@ import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
 import { SITE_TITLE } from '../consts';
+import { PALETTE_IDS, paletteCss } from '../utils/palettes';
 import { Font } from 'astro:assets';
 
 interface Props {
@@ -32,12 +33,24 @@ const { title, description, image = FallbackImage } = Astro.props;
 />
 <meta name="generator" content={Astro.generator} />
 
-<script is:inline>
-	const savedTheme = localStorage.getItem('theme');
-	if (savedTheme === 'light' || savedTheme === 'dark') {
-		document.documentElement.dataset.theme = savedTheme;
+<!-- Apply the saved light/dark mode and colour theme before first paint (no flash). -->
+<script is:inline define:vars={{ paletteIds: PALETTE_IDS }}>
+	try {
+		const savedTheme = localStorage.getItem('theme');
+		if (savedTheme === 'light' || savedTheme === 'dark') {
+			document.documentElement.dataset.theme = savedTheme;
+		}
+		const savedPalette = localStorage.getItem('palette');
+		if (paletteIds.includes(savedPalette)) {
+			document.documentElement.dataset.palette = savedPalette;
+		}
+	} catch {
+		// Storage unavailable (e.g. private browsing): use the defaults.
 	}
 </script>
+
+<!-- Composer colour themes (generated from src/utils/palettes.ts). -->
+<Fragment set:html={`<style>${paletteCss()}</style>`} />
 
 <Font cssVariable="--font-atkinson" preload />
 
