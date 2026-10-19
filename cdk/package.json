@@ -1,5 +1,5 @@
 {
-  "name": "hello-cdk",
+  "name": "cdk",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc",
