@@ -6,23 +6,32 @@ import Layout from '../layouts/BlogPost.astro';
 ---
 
 <Layout
-	title="About Mysterium"
-	description="Who writes this journal and how the site is built."
-	pubDate={new Date('September 14 2026')}
-	key="F#"
+	title="About Pianoforte"
+	description="What this site is, who writes it, and how it is built."
+	pubDate={new Date('October 19 2026')}
 >
 	<p>
-		<strong>Mysterium</strong> is a piano journal about Alexander Scriabin (1872–1915), named after
-		the vast multimedia work he planned but never finished. I write about the pieces on my piano
-		stand, the ideas behind them, and Scriabin's unusual habit of hearing music in colour.
+		<strong>Pianoforte</strong> is a journey through classical piano music, from Johann Sebastian Bach to the
+		living virtuoso Marc-André Hamelin. Each composer has a profile, a short demo played on the visual piano,
+		and a colour theme you can apply to the whole site. The <strong>Scriabin</strong> theme uses the colours
+		Alexander Scriabin associated with each musical key, which is where this site began: as a Scriabin piano
+		journal.
+	</p>
+
+	<h2>About the demos</h2>
+	<p>
+		The Bach and Mozart demos are the exact opening bars of the Prelude in C major, BWV 846, and the Sonata in
+		C major, K. 545. The Scriabin demo is his Mystic chord and Prometheus scale. The other demos are original
+		sketches written for this site in each composer's style; they are clearly labelled and are not quotations.
+		Marc-André Hamelin's compositions are under copyright and are not reproduced here.
 	</p>
 
 	<h2>How it is built</h2>
 	<p>
-		The site is an <a href="https://astro.build/">Astro</a> project built for the CS4421 DevOps module at
-		the University of Limerick. The static pages are served from Amazon S3 through CloudFront, and the
-		dynamic version runs as a Docker container on AWS with a <code>/api/health</code> probe. The colour
-		keyboard uses the Web Audio API: every note is synthesised in your browser and lit with Scriabin's
-		colour for its key.
+		The site is an <a href="https://astro.build/">Astro</a> project built for the CS4421 DevOps module at the
+		University of Limerick. The static pages are served from Amazon S3 through CloudFront, and the dynamic
+		version runs as a Docker container on AWS with a <code>/api/health</code> probe. Every change goes through
+		a pull request with linting, type checks, unit, integration and end-to-end tests. The piano uses the Web
+		Audio API: every note is synthesised in your browser.
 	</p>
 </Layout>

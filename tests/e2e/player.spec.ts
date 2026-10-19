@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('score player', () => {
 	test('plays the MusicXML demo, lighting keys as it goes', async ({ page }) => {
 		await page.goto('/');
-		await page.getByRole('link', { name: 'Player' }).click();
+		await page.getByRole('link', { name: 'Player', exact: true }).click();
 		await expect(page.getByRole('heading', { level: 1, name: 'Score player' })).toBeVisible();
 
 		await page.getByRole('button', { name: /Prometheus Study/ }).click();

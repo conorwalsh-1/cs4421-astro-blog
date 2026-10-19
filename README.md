@@ -1,11 +1,21 @@
-# Mysterium: a Scriabin piano journal
+# Pianoforte: classical piano over the ages
 
 [![CI](https://github.com/conorwalsh-1/cs4421-astro-blog/actions/workflows/ci.yml/badge.svg)](https://github.com/conorwalsh-1/cs4421-astro-blog/actions/workflows/ci.yml)
 
-An interactive piano journal about Alexander Scriabin, built with Astro for
-**CS4421 DevOps** (University of Limerick, ISE). Visitors can play a Web Audio
-keyboard lit in Scriabin's *Prometheus* key colours, hear the Mystic chord, read
-the journal, and leave notes in the **Listening room**.
+An interactive site about classical piano music, from Bach to Marc-André Hamelin,
+built with Astro for **CS4421 DevOps** (University of Limerick, ISE).
+
+- **Composers:** profiles of Bach, Mozart, Chopin, Liszt, Scriabin, Ravel and
+  Hamelin on a lifespan timeline. Each has a demo played on the visual piano.
+  Bach (BWV 846) and Mozart (K. 545) are exact openings, Scriabin is his Mystic
+  chord, and the rest are clearly labelled original sketches in each style.
+- **Colour themes:** a palette per composer plus *Concert grand*, applied site-wide
+  from the header. *Scriabin* uses his own colour-for-each-key scheme. Defined
+  once in `src/utils/palettes.ts`; tests enforce WCAG AA contrast.
+- **Visual piano:** 88 keys, playable with the mouse or computer keyboard
+  (A W S E D…, Z/X to shift octave).
+- **Score player:** plays MIDI files and MusicXML sheet music on the piano.
+- **Journal** and **Listening room** (notes via the `/api/feedback` endpoint).
 
 ## Architecture
 
@@ -91,13 +101,20 @@ workflow logs and the CloudFormation console.
 
 ```
 src/
-  components/ColourKeyboard.astro   Web Audio keyboard in Scriabin's colours
-  content/                          Journal posts + authors (Zod-validated)
+  components/ColourKeyboard.astro   88-key Web Audio piano, coloured by the active palette
+  components/ComposerDemo.astro     Plays a composer's demo on the piano
+  components/LifespanTimeline.astro Composers' lifespans, 1675 to today
+  content/composers/                Composer profiles (Zod-validated)
+  content/blog/, content/authors/   Journal posts + authors
   middleware.ts                     Structured JSON request logging
+  pages/composers/                  Composers index and profile pages
+  pages/player.astro                MIDI / MusicXML score player
   pages/api/health.ts               Liveness probe
   pages/api/feedback.ts             Listening-room notes API
   pages/listening-room.astro        Server-rendered page
-  utils/                            Music theory, logging, feedback store (+ tests)
+  utils/palettes.ts                 Composer colour themes (single source of truth)
+  utils/demos.ts                    Composer demos (quotations + original sketches)
+  utils/                            Music theory, MIDI/MusicXML parsing, playback, logging (+ tests)
 tests/integration, tests/e2e        Integration and Playwright tests
 cdk/                                AWS CDK app (static site, ECR, ECS)
 docs/adr, docs/runbooks             Architecture decisions and runbooks
