@@ -40,6 +40,7 @@ function handler(event) {
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
         functionAssociations: [
           { function: directoryIndex, eventType: cloudfront.FunctionEventType.VIEWER_REQUEST },
         ],
