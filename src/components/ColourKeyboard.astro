@@ -251,6 +251,8 @@ const whiteCount = keys.filter((key) => !key.black).length;
 		midis: number[];
 		/** Seconds the keys stay lit (defaults to a short flash). */
 		duration?: number;
+		/** Per-key seconds, parallel to `midis`; overrides `duration`. */
+		durations?: number[];
 		/** Text for the readout; defaults to the note names and colours. */
 		label?: string;
 	}
@@ -366,8 +368,8 @@ const whiteCount = keys.filter((key) => !key.black).length;
 
 		// Other components (e.g. the score player) light keys without making sound.
 		root.addEventListener('colour-keyboard:light', (event) => {
-			const { midis, duration = 0.45, label } = (event as CustomEvent<LightDetail>).detail;
-			midis.forEach((midi) => flash(midi, duration));
+			const { midis, duration = 0.45, durations, label } = (event as CustomEvent<LightDetail>).detail;
+			midis.forEach((midi, i) => flash(midi, durations?.[i] ?? duration));
 			light(midis, label);
 		});
 

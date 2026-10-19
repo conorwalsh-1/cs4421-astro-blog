@@ -12,8 +12,8 @@ export interface PlayerOutput {
 	now(): number;
 	/** Sound a note at an absolute audio-clock time for `duration` seconds. */
 	playNote(midi: number, at: number, velocity: number, duration: number): void;
-	/** Light keys after `delay` seconds for `duration` seconds (notes struck together are grouped). */
-	lightNotes(midis: number[], delay: number, duration: number): void;
+	/** Light keys after `delay` seconds; notes struck together are grouped, each lit for its own length. */
+	lightNotes(midis: number[], delay: number, durations: number[]): void;
 	/** Cut every sounding or scheduled note. */
 	silence(): void;
 	onProgress?(position: number): void;
@@ -121,7 +121,7 @@ export class ScorePlayer {
 		while (this.nextIndex < notes.length && notes[this.nextIndex].time < horizon) {
 			const groupTime = notes[this.nextIndex].time;
 			const group: number[] = [];
-			let longest = 0;
+			const durations: number[] = [];
 			// Notes struck together are lit together.
 			while (this.nextIndex < notes.length && notes[this.nextIndex].time === groupTime) {
 				const note = notes[this.nextIndex++];
@@ -129,9 +129,9 @@ export class ScorePlayer {
 				const duration = note.duration / this.speed;
 				this.output.playNote(note.midi, now + delay, note.velocity, duration);
 				group.push(note.midi);
-				longest = Math.max(longest, duration);
+				durations.push(duration);
 			}
-			this.output.lightNotes(group, Math.max(0, (groupTime - position) / this.speed), longest);
+			this.output.lightNotes(group, Math.max(0, (groupTime - position) / this.speed), durations);
 		}
 
 		this.output.onProgress?.(position);

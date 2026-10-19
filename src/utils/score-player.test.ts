@@ -50,7 +50,7 @@ describe('ScorePlayer', () => {
 
 		expect(output.playNote.mock.calls.map(([midi]) => midi)).toEqual([60, 64]);
 		expect(output.playNote).toHaveBeenCalledWith(60, 100, 0.8, 1);
-		expect(output.lightNotes).toHaveBeenCalledWith([60, 64], 0, 1);
+		expect(output.lightNotes).toHaveBeenCalledWith([60, 64], 0, [1, 0.5]);
 		expect(output.onStateChange).toHaveBeenLastCalledWith('playing');
 	});
 

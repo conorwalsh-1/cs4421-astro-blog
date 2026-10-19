@@ -1,0 +1,373 @@
+---
+// Prerendered: everything runs in the browser, so the player also works on the static S3 site.
+export const prerender = true;
+
+import BaseHead from '../components/BaseHead.astro';
+import ColourKeyboard from '../components/ColourKeyboard.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+import { ACCEPTED_EXTENSIONS } from '../utils/load-score';
+
+const DEMOS = [
+	{ file: 'prometheus-study.musicxml', label: 'Prometheus Study', kind: 'sheet music · MusicXML' },
+	{ file: 'mystic-arpeggios.mid', label: 'Mystic chord arpeggios', kind: 'MIDI' },
+];
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Score player | ${SITE_TITLE}`}
+			description="Play MIDI files and MusicXML sheet music on Scriabin's colour keyboard."
+		/>
+		<style>
+			main {
+				width: 960px;
+			}
+			.drop-zone {
+				display: grid;
+				gap: 0.6rem;
+				justify-items: center;
+				padding: 1.5rem;
+				border: 2px dashed rgb(var(--gray-light));
+				border-radius: 14px;
+				background: var(--surface);
+				text-align: center;
+				font-size: 0.85em;
+				transition:
+					border-color 0.15s ease,
+					background 0.15s ease;
+			}
+			.drop-zone.dragging {
+				border-color: var(--accent);
+				background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+			}
+			.drop-zone p {
+				margin: 0;
+			}
+			.hint {
+				color: rgb(var(--gray));
+				font-size: 0.85em;
+			}
+			.file-button,
+			.demos button,
+			.transport button {
+				padding: 0.4em 1em;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 999px;
+				background: var(--page-bg);
+				color: rgb(var(--black));
+				font: inherit;
+				cursor: pointer;
+			}
+			.file-button:hover,
+			.file-button:focus-within,
+			.demos button:hover,
+			.transport button:hover:not(:disabled) {
+				border-color: var(--accent);
+				color: var(--accent);
+			}
+			.file-button input {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				opacity: 0;
+			}
+			.demos {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				justify-content: center;
+				align-items: center;
+			}
+			.panel {
+				display: grid;
+				gap: 0.75rem;
+				margin-top: 1.5rem;
+				padding: 1rem 1.25rem;
+				border-radius: 14px;
+				background: var(--surface);
+				box-shadow: 0 2px 8px rgba(var(--black), 6%);
+				font-size: 0.85em;
+			}
+			.score-title {
+				margin: 0;
+				font-size: 1.3em;
+			}
+			.score-meta,
+			.status {
+				margin: 0;
+				color: rgb(var(--gray));
+			}
+			.status.error {
+				color: #c0262d;
+			}
+			.transport {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				align-items: center;
+			}
+			.transport button:disabled {
+				opacity: 0.45;
+				cursor: default;
+			}
+			.transport .primary {
+				border-color: var(--accent);
+				background: var(--accent);
+				color: #fff;
+			}
+			.transport .primary:hover:not(:disabled) {
+				color: #fff;
+				filter: brightness(1.1);
+			}
+			.speed {
+				display: flex;
+				gap: 0.4rem;
+				align-items: center;
+				margin-left: auto;
+			}
+			.speed select {
+				padding: 0.25em 0.4em;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 6px;
+				background: var(--page-bg);
+				color: rgb(var(--black));
+				font: inherit;
+			}
+			.timeline {
+				display: flex;
+				gap: 0.75rem;
+				align-items: center;
+			}
+			.timeline input {
+				flex: 1;
+				accent-color: var(--accent);
+			}
+			.timeline output {
+				min-width: 6.5em;
+				font-variant-numeric: tabular-nums;
+				text-align: right;
+			}
+			@media (max-width: 720px) {
+				.speed {
+					margin-left: 0;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Score player</h1>
+			<p>
+				Load a <strong>MIDI file</strong> or <strong>sheet music in MusicXML</strong> (exported from MuseScore,
+				Sibelius, Finale or Dorico) and hear it played on the colour keyboard, every note lit in Scriabin's
+				colour for its key.
+			</p>
+
+			<section class="drop-zone" data-drop-zone aria-label="Load a score">
+				<p><strong>Drop a score here</strong> or</p>
+				<label class="file-button">
+					Choose a file…
+					<input type="file" data-file-input accept={ACCEPTED_EXTENSIONS.join(',')} />
+				</label>
+				<p class="hint">{ACCEPTED_EXTENSIONS.join('  ')}. Files stay in your browser and are never uploaded.</p>
+				<div class="demos">
+					<span class="hint">Or try a demo:</span>
+					{
+						DEMOS.map((demo) => (
+							<button type="button" data-demo={`/scores/${demo.file}`} data-demo-name={demo.file}>
+								{demo.label} <span class="hint">({demo.kind})</span>
+							</button>
+						))
+					}
+				</div>
+			</section>
+
+			<section class="panel" aria-label="Playback">
+				<h2 class="score-title" data-score-title>No score loaded</h2>
+				<p class="score-meta" data-score-meta>Choose a file or a demo to begin.</p>
+				<div class="transport">
+					<button type="button" class="primary" data-action="play" disabled>▶ Play</button>
+					<button type="button" data-action="stop" disabled>■ Stop</button>
+					<label class="speed">
+						Speed
+						<select data-speed>
+							{SPEEDS.map((speed) => <option value={speed} selected={speed === 1}>{speed}×</option>)}
+						</select>
+					</label>
+				</div>
+				<div class="timeline">
+					<input type="range" min="0" max="0" step="0.1" value="0" data-seek aria-label="Position" disabled />
+					<output data-clock>0:00 / 0:00</output>
+				</div>
+				<p class="status" data-status aria-live="polite"></p>
+			</section>
+
+			<ColourKeyboard />
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	import { loadScore } from '../utils/load-score';
+	import { audioNow, silenceAll, strike } from '../utils/piano';
+	import { formatClock, type Score } from '../utils/score';
+	import { ScorePlayer, type PlayerState } from '../utils/score-player';
+	import { noteName } from '../utils/scriabin';
+
+	const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
+	const keyboard = $<HTMLElement>('[data-colour-keyboard]');
+	const titleEl = $<HTMLElement>('[data-score-title]');
+	const metaEl = $<HTMLElement>('[data-score-meta]');
+	const statusEl = $<HTMLElement>('[data-status]');
+	const playButton = $<HTMLButtonElement>('[data-action="play"]');
+	const stopButton = $<HTMLButtonElement>('[data-action="stop"]');
+	const speedSelect = $<HTMLSelectElement>('[data-speed]');
+	const seek = $<HTMLInputElement>('[data-seek]');
+	const clock = $<HTMLOutputElement>('[data-clock]');
+	const fileInput = $<HTMLInputElement>('[data-file-input]');
+	const dropZone = $<HTMLElement>('[data-drop-zone]');
+
+	let player: ScorePlayer | undefined;
+	let score: Score | undefined;
+	let dragging = false;
+	const pendingLights = new Set<ReturnType<typeof setTimeout>>();
+
+	const setStatus = (message: string, isError = false) => {
+		statusEl.textContent = message;
+		statusEl.classList.toggle('error', isError);
+	};
+
+	const showProgress = (position: number) => {
+		if (!score) return;
+		if (!dragging) seek.value = String(position);
+		clock.value = `${formatClock(position)} / ${formatClock(score.duration)}`;
+	};
+
+	const clearLights = () => {
+		pendingLights.forEach(clearTimeout);
+		pendingLights.clear();
+	};
+
+	const showState = (state: PlayerState) => {
+		playButton.textContent = state === 'playing' ? '❚❚ Pause' : '▶ Play';
+		stopButton.disabled = state === 'stopped' && (player?.position ?? 0) === 0;
+		if (state !== 'playing') clearLights();
+	};
+
+	function load(newScore: Score) {
+		player?.stop();
+		score = newScore;
+		player = new ScorePlayer(newScore, {
+			now: audioNow,
+			playNote: (midi, at, velocity, duration) => strike(midi, 0, velocity, duration, at),
+			lightNotes: (midis, delay, durations) => {
+				const timer = setTimeout(() => {
+					pendingLights.delete(timer);
+					keyboard.dispatchEvent(
+						new CustomEvent('colour-keyboard:light', {
+							detail: { midis, durations: durations.map((seconds) => Math.max(0.12, seconds)) },
+						}),
+					);
+				}, delay * 1000);
+				pendingLights.add(timer);
+			},
+			silence: silenceAll,
+			onProgress: showProgress,
+			onStateChange: showState,
+		});
+		player.setSpeed(Number(speedSelect.value));
+
+		const pitches = newScore.notes.map((note) => note.midi);
+		titleEl.textContent = newScore.title;
+		metaEl.textContent =
+			newScore.notes.length === 0
+				? `${newScore.format} · no playable notes`
+				: `${newScore.format} · ${newScore.notes.length} notes · ${formatClock(newScore.duration)}`;
+		seek.max = String(newScore.duration);
+		seek.disabled = playButton.disabled = newScore.notes.length === 0;
+		showProgress(0);
+		showState('stopped');
+		setStatus(
+			newScore.notes.length === 0
+				? 'This file has no notes to play.'
+				: `Ready: ${noteName(Math.min(...pitches))}–${noteName(Math.max(...pitches))}. Press Play (or Space).`,
+		);
+	}
+
+	async function open(name: string, bytes: Uint8Array) {
+		setStatus(`Reading ${name}…`);
+		try {
+			load(await loadScore(name, bytes));
+		} catch (error) {
+			setStatus(error instanceof Error ? error.message : 'Could not read that file.', true);
+		}
+	}
+
+	async function openFile(file: File) {
+		await open(file.name, new Uint8Array(await file.arrayBuffer()));
+	}
+
+	fileInput.addEventListener('change', () => {
+		const file = fileInput.files?.[0];
+		if (file) void openFile(file);
+		fileInput.value = '';
+	});
+
+	document.querySelectorAll<HTMLButtonElement>('[data-demo]').forEach((button) =>
+		button.addEventListener('click', async () => {
+			try {
+				const response = await fetch(button.dataset.demo!);
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				await open(button.dataset.demoName!, new Uint8Array(await response.arrayBuffer()));
+			} catch {
+				setStatus('Could not load the demo score.', true);
+			}
+		}),
+	);
+
+	dropZone.addEventListener('dragover', (event) => {
+		event.preventDefault();
+		dropZone.classList.add('dragging');
+	});
+	dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+	dropZone.addEventListener('drop', (event) => {
+		event.preventDefault();
+		dropZone.classList.remove('dragging');
+		const file = event.dataTransfer?.files[0];
+		if (file) void openFile(file);
+	});
+
+	playButton.addEventListener('click', () => {
+		if (!player) return;
+		if (player.playbackState === 'playing') player.pause();
+		else player.play();
+	});
+	stopButton.addEventListener('click', () => player?.stop());
+	speedSelect.addEventListener('change', () => player?.setSpeed(Number(speedSelect.value)));
+
+	seek.addEventListener('pointerdown', () => (dragging = true));
+	seek.addEventListener('input', () => {
+		if (score) clock.value = `${formatClock(Number(seek.value))} / ${formatClock(score.duration)}`;
+	});
+	seek.addEventListener('change', () => {
+		dragging = false;
+		clearLights();
+		player?.seek(Number(seek.value));
+	});
+
+	// Space toggles playback (when not typing or focused on a control).
+	window.addEventListener('keydown', (event) => {
+		const target = event.target;
+		if (event.code !== 'Space' || !player || playButton.disabled) return;
+		if (target instanceof Element && target.closest('input, select, textarea, button')) return;
+		event.preventDefault();
+		playButton.click();
+	});
+</script>
