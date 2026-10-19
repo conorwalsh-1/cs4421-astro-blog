@@ -1,48 +1,85 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import ColourKeyboard from '../components/ColourKeyboard.astro';
 import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { SCRIABIN_COLOURS } from '../utils/scriabin';
+
+const latest = (await getCollection('blog'))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 3);
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<style>
+			.eyebrow {
+				margin: 0;
+				color: rgb(var(--gray));
+				font-size: 0.8em;
+				font-weight: 700;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+			.latest {
+				padding: 0;
+				list-style: none;
+			}
+			.latest li {
+				display: flex;
+				gap: 0.75rem;
+				align-items: baseline;
+				margin-bottom: 0.5rem;
+			}
+			.dot {
+				flex: 0 0 auto;
+				width: 0.8em;
+				height: 0.8em;
+				border-radius: 50%;
+				background: var(--key-colour);
+			}
+			.latest time {
+				color: rgb(var(--gray));
+				font-size: 0.8em;
+			}
+		</style>
 	</head>
 	<body>
 		<Header />
 		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
+			<p class="eyebrow">A Scriabin piano journal</p>
+			<h1>Mysterium</h1>
 			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
+				Alexander Scriabin heard keys as colours: C was red, D yellow, F♯ a brilliant blue.
+				In <em>Prometheus</em> he even wrote a part for a keyboard of light. This site is my practice
+				journal for his piano music, with an instrument you can play in his colours.
 			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
+
+			<ColourKeyboard />
+
+			<h2>From the journal</h2>
+			<ul class="latest">
+				{
+					latest.map((post) => (
+						<li>
+							<span
+								class="dot"
+								style={`--key-colour: ${post.data.key ? SCRIABIN_COLOURS[post.data.key].hex : 'var(--accent)'}`}
+							/>
+							<span>
+								<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+								<br />
+								<FormattedDate date={post.data.pubDate} />
+							</span>
+						</li>
+					))
+				}
 			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
 		</main>
 		<Footer />
 	</body>
