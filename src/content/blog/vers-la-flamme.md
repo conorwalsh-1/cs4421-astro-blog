@@ -3,6 +3,7 @@ title: 'Practice notes: Vers la flamme, Op. 72'
 description: 'Five minutes of slow-burning tremolo, and the practice plan I am using to learn it.'
 pubDate: 'Oct 12 2026'
 author: 'conor-walsh'
+composer: 'scriabin'
 key: 'E'
 ---
 

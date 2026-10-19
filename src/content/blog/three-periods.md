@@ -3,6 +3,7 @@ title: 'From Chopin to the Mysterium'
 description: 'A listening guide to the three stylistic periods of Scriabin, from the early études to the unfinished Mysterium.'
 pubDate: 'Oct 05 2026'
 author: 'conor-walsh'
+composer: 'scriabin'
 key: 'D#'
 ---
 
