@@ -32,6 +32,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Type & schema check
+        run: npm run check
+
       - name: Run unit tests
         run: npm run test:unit -- --run --exclude "cdk/**"
 
