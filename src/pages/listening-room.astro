@@ -1,0 +1,170 @@
+---
+// Rendered on demand by the Node server: notes come from /api/feedback's store.
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+import { feedbackStore } from '../utils/feedback';
+import { PITCH_CLASSES, SCRIABIN_COLOURS } from '../utils/scriabin';
+
+const notes = feedbackStore.list();
+const rootMidi = (key: string) => 60 + PITCH_CLASSES.indexOf(key as (typeof PITCH_CLASSES)[number]);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`Listening room | ${SITE_TITLE}`}
+			description="Leave a note about the Scriabin you are listening to, lit in the colour of your favourite key."
+		/>
+		<style>
+			form {
+				display: grid;
+				gap: 0.75rem;
+				margin: 2rem 0 3rem;
+				padding: 1.25rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 12px;
+				background: var(--surface);
+				font-size: 0.85em;
+			}
+			label {
+				display: grid;
+				gap: 0.25rem;
+			}
+			input,
+			select,
+			textarea {
+				padding: 0.4em 0.6em;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 6px;
+				background: var(--page-bg);
+				color: rgb(var(--black));
+				font: inherit;
+			}
+			form button {
+				justify-self: start;
+				padding: 0.45em 1.2em;
+				border: 0;
+				border-radius: 999px;
+				background: var(--accent);
+				color: #fff;
+				font: inherit;
+				cursor: pointer;
+			}
+			.status {
+				margin: 0;
+				min-height: 1.5em;
+			}
+			.notes {
+				display: grid;
+				gap: 1rem;
+				padding: 0;
+				list-style: none;
+			}
+			.note {
+				width: 100%;
+				padding: 1rem 1.25rem;
+				border: 0;
+				border-left: 6px solid var(--key-colour);
+				border-radius: 10px;
+				background: linear-gradient(90deg, color-mix(in srgb, var(--key-colour) 22%, transparent), transparent 70%),
+					var(--surface);
+				box-shadow: 0 2px 8px rgba(var(--black), 6%);
+				color: rgb(var(--gray-dark));
+				font: inherit;
+				text-align: left;
+				cursor: pointer;
+			}
+			.note h3 {
+				margin: 0;
+				font-size: 1.1em;
+			}
+			.note p {
+				margin: 0.25rem 0 0;
+			}
+			.meta {
+				color: rgb(var(--gray));
+				font-size: 0.75em;
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Listening room</h1>
+			<p>
+				What Scriabin are you listening to? Leave a note and pick your favourite key. Your note is lit
+				in Scriabin's colour for that key, and clicking any note plays the Mystic chord built on it.
+			</p>
+
+			<form data-feedback-form>
+				<label>Your name <input name="name" required maxlength="40" /></label>
+				<label>Piece <input name="piece" required maxlength="80" placeholder="e.g. Sonata No. 5, Op. 53" /></label>
+				<label>
+					Favourite key
+					<select name="key">
+						{PITCH_CLASSES.map((key) => <option value={key}>{key.replace('#', '♯')} · {SCRIABIN_COLOURS[key].name}</option>)}
+					</select>
+				</label>
+				<label>Note <textarea name="message" rows="3" maxlength="280"></textarea></label>
+				<button type="submit">Leave a note</button>
+				<p class="status" data-status aria-live="polite"></p>
+			</form>
+
+			<h2>Notes</h2>
+			{notes.length === 0 && <p>No notes yet. Be the first.</p>}
+			<ul class="notes">
+				{
+					notes.map((note) => (
+						<li>
+							<button
+								type="button"
+								class="note"
+								data-root={rootMidi(note.key)}
+								style={`--key-colour: ${SCRIABIN_COLOURS[note.key].hex}`}
+							>
+								<h3>{note.piece}</h3>
+								{note.message && <p>{note.message}</p>}
+								<p class="meta">
+									{note.name} · in {note.key.replace('#', '♯')} · <FormattedDate date={new Date(note.createdAt)} />
+								</p>
+							</button>
+						</li>
+					))
+				}
+			</ul>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	import { strike } from '../utils/piano';
+	import { mysticChord } from '../utils/scriabin';
+
+	document.querySelectorAll<HTMLElement>('.note[data-root]').forEach((note) => {
+		note.addEventListener('click', () => {
+			mysticChord(Number(note.dataset.root)).forEach((midi, i) => strike(midi, i * 0.09));
+		});
+	});
+
+	const form = document.querySelector<HTMLFormElement>('[data-feedback-form]');
+	const status = document.querySelector<HTMLElement>('[data-status]');
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const body = Object.fromEntries(new FormData(form));
+		const response = await fetch('/api/feedback', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body),
+		});
+		if (response.ok) {
+			window.location.reload();
+		} else if (status) {
+			status.textContent = 'Sorry, that note could not be saved. Check the fields and try again.';
+		}
+	});
+</script>
