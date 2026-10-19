@@ -52,7 +52,8 @@ const { title, description, image = FallbackImage } = Astro.props;
 <!-- Composer colour themes (generated from src/utils/palettes.ts). -->
 <Fragment set:html={`<style>${paletteCss()}</style>`} />
 
-<Font cssVariable="--font-atkinson" preload />
+<Font cssVariable="--font-text" preload={[{ weight: 400, style: "normal" }]} />
+<Font cssVariable="--font-display" preload={[{ weight: 500, style: "normal" }]} />
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />
