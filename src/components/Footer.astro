@@ -1,31 +1,55 @@
 ---
+import { SITE_TITLE } from '../consts';
+
 const today = new Date();
 ---
 
 <footer>
-	&copy; {today.getFullYear()} Conor Walsh. Classical piano over the ages, from Bach to Hamelin.
-	<div class="social-links">
-		<a href="https://github.com/conorwalsh-1/cs4421-astro-blog" target="_blank">Source on GitHub</a>
-	</div>
+	<div class="ornament" aria-hidden="true"></div>
+	<!-- "Fine" (Italian, "end") marks where a piece of music finishes. -->
+	<p class="fine" lang="it">Fine</p>
+	<p>
+		&copy; {today.getFullYear()} Conor Walsh · {SITE_TITLE}: classical piano over the ages, from Bach to Hamelin.
+	</p>
+	<p class="links">
+		<a href="/rss.xml">RSS</a>
+		<a href="https://github.com/conorwalsh-1/cs4421-astro-blog" target="_blank" rel="noopener">Source on GitHub</a>
+	</p>
 </footer>
 <style>
 	footer {
-		padding: 2em 1em 6em 1em;
-		background: linear-gradient(var(--gray-gradient)) no-repeat;
-		background-color: var(--page-bg);
+		max-width: 720px;
+		margin: 0 auto;
+		padding: 1em 1em 4em;
 		color: rgb(var(--gray));
+		font-size: 0.85em;
 		text-align: center;
 	}
-	.social-links {
-		display: flex;
-		justify-content: center;
-		gap: 1em;
+	.ornament {
 		margin-top: 1em;
 	}
-	.social-links a {
+	.fine {
+		margin: 0 0 0.5em;
+		color: rgb(var(--black));
+		font-family: var(--font-display);
+		font-size: 1.6em;
+		font-style: italic;
+		font-weight: 600;
+	}
+	p {
+		margin: 0.4em 0;
+	}
+	.links {
+		display: flex;
+		justify-content: center;
+		gap: 1.5em;
+		font-variant-caps: all-small-caps;
+		letter-spacing: 0.1em;
+	}
+	.links a {
 		color: rgb(var(--gray));
 	}
-	.social-links a:hover {
-		color: rgb(var(--gray-dark));
+	.links a:hover {
+		color: var(--accent);
 	}
 </style>
