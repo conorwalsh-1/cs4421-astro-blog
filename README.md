@@ -16,6 +16,10 @@ built with Astro for **CS4421 DevOps** (University of Limerick, ISE).
   (A W S E D…, Z/X to shift octave).
 - **Score player:** plays MIDI files and MusicXML sheet music on the piano.
 - **Journal** and **Listening room** (notes via the `/api/feedback` endpoint).
+- **Design:** a concert-programme look, with ivory paper and an ebony dark mode,
+  self-hosted EB Garamond and Cormorant Garamond (SIL OFL), small capitals and
+  ornamental rules. Page colours are checked for WCAG AA contrast by
+  `src/styles/design-tokens.test.ts`.
 
 ## Architecture
 
