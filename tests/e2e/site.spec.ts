@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('home page colour keyboard', () => {
 	test('lights a key in its palette colour when played', async ({ page }) => {
 		await page.goto('/');
-		await expect(page.getByRole('heading', { level: 1, name: 'Mysterium' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 1, name: 'Pianoforte' })).toBeVisible();
 
 		await page.getByRole('button', { name: 'C4', exact: true }).dispatchEvent('pointerdown');
 
