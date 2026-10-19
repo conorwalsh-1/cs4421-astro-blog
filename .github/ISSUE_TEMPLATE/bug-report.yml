@@ -1,0 +1,36 @@
+name: Bug report
+description: Something is broken in production or locally
+title: 'Bug: '
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the URL, error message, or CloudWatch log line (no secrets).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Static site (S3 + CloudFront)
+        - Container app (ECS)
+        - Local development
+    validations:
+      required: true
