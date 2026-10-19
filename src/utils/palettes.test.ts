@@ -104,5 +104,12 @@ describe('paletteCss', () => {
 			expect(css).toContain(`:root[data-theme='dark'] [data-palette='${id}'] { --accent: ${PALETTES[id].accent.dark}; }`);
 		}
 		expect(css).toContain(`--pc-11: ${PALETTES.liszt.pitchColours[11]};`);
+		expect(css).toContain(`--keyboard-accent: ${PALETTES.mozart.accent.dark};`);
+	});
+
+	it('keeps the keyboard accent readable on every keyboard background', () => {
+		for (const palette of Object.values(PALETTES)) {
+			expect(contrastRatio(palette.accent.dark, palette.keyboard)).toBeGreaterThanOrEqual(4.5);
+		}
 	});
 });
