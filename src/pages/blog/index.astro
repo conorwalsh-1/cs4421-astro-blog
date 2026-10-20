@@ -8,6 +8,7 @@ import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
+import { formatReadingTime, readingMinutes } from '../../utils/reading-time';
 import { SCRIABIN_COLOURS } from '../../utils/scriabin';
 
 const posts = await Promise.all(
@@ -92,6 +93,7 @@ const posts = await Promise.all(
 								<p class="meta">
 									<FormattedDate date={post.data.pubDate} />
 									{composer && <> · {composer.data.shortName}</>}
+									<span data-reading-time> · {formatReadingTime(readingMinutes(post.body ?? ''))}</span>
 								</p>
 								<h2>
 									<a href={`/blog/${post.id}/`}>{post.data.title}</a>

@@ -80,6 +80,14 @@ test.describe('journal', () => {
 		await expect(page.getByText('In C: red')).toBeVisible();
 		await expect(page.getByText('Written by')).toBeVisible();
 	});
+
+	test('shows how long each post takes to read', async ({ page }) => {
+		await page.goto('/blog/');
+		await expect(page.locator('.entry [data-reading-time]').first()).toHaveText(/^ · \d+ min read$/);
+
+		await page.goto('/blog/hearing-in-colour/');
+		await expect(page.locator('article [data-reading-time]')).toHaveText(/^ · \d+ min read$/);
+	});
 });
 
 test.describe('listening room', () => {

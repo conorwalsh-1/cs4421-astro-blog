@@ -4,6 +4,7 @@ export const prerender = true;
 
 import { type CollectionEntry, getCollection, getEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { readingMinutes } from '../../utils/reading-time';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog');
@@ -20,6 +21,6 @@ const composer = post.data.composer ? await getEntry(post.data.composer) : undef
 const { Content } = await render(post);
 ---
 
-<BlogPost {...post.data} author={author.data} composer={composer}>
+<BlogPost {...post.data} author={author.data} composer={composer} readingTime={readingMinutes(post.body ?? '')}>
 	<Content />
 </BlogPost>
