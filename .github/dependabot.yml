@@ -4,10 +4,19 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # @astrojs/check and typescript-eslint support TypeScript 5 and 6 only.
+      # Revisit when both accept TypeScript 7.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: npm
     directory: /cdk
     schedule:
       interval: weekly
+    ignore:
+      # The types must match the Node.js version we run (24, in CI and the Dockerfile).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
