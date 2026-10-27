@@ -44,6 +44,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # CloudFront needs a verified AWS account. Set the repository variable USE_CLOUDFRONT
+      # to 'true' once it is; until then the site is served by S3 static website hosting.
       - name: Deploy Infrastructure & Assets with AWS CDK
         working-directory: cdk
-        run: npx cdk deploy StaticSiteStack --require-approval never
+        run: npx cdk deploy StaticSiteStack --require-approval never -c cloudfront=${{ vars.USE_CLOUDFRONT || 'false' }}

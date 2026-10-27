@@ -101,6 +101,19 @@ docker inspect --format='{{json .State.Health}}' my-blog
 The stack outputs `SiteUrl` (static site) and `AppUrl` (container app) appear in the
 workflow logs and the CloudFormation console.
 
+### Without CloudFront
+
+AWS only allows CloudFront on accounts it has verified. Until then the deploy workflows pass
+`-c cloudfront=false` to CDK. The static site is then served by S3 static website hosting and
+the app straight from its load balancer, both over HTTP and without CloudFront's caching and
+security headers. Set the repository variable `USE_CLOUDFRONT` to `true` (Settings → Secrets and
+variables → Actions → Variables) to switch CloudFront back on. To deploy by hand:
+
+```sh
+cd cdk
+npx cdk deploy StaticSiteStack -c cloudfront=false
+```
+
 ## Project structure
 
 ```
