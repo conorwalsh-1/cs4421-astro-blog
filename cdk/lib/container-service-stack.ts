@@ -12,6 +12,8 @@ export interface ContainerServiceStackProps extends cdk.StackProps {
   repository: ecr.IRepository;
   /** Image tag the service runs; the CD pipeline moves `latest` and forces a new deployment. */
   imageTag?: string;
+  /** Put CloudFront (HTTPS) in front of the load balancer (default). Without it the app is served over HTTP. */
+  useCloudFront?: boolean;
 }
 
 // Week 7: the containerised Astro server on AWS ECS (Fargate) behind a load balancer.
@@ -93,28 +95,33 @@ export class ContainerServiceStack extends cdk.Stack {
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
 
-    // HTTPS front door: CloudFront terminates TLS and forwards every request
-    // (no caching) to the load balancer, adding standard security headers.
-    const appDistribution = new cloudfront.Distribution(this, 'AppDistribution', {
-      defaultBehavior: {
-        origin: new origins.LoadBalancerV2Origin(service.loadBalancer, {
-          protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
-        }),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-        responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
-      },
-      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
-    });
+    const serviceUrl = `http://${service.loadBalancer.loadBalancerDnsName}`;
+    let appUrl = serviceUrl;
+    if (props.useCloudFront !== false) {
+      // HTTPS front door: CloudFront terminates TLS and forwards every request
+      // (no caching) to the load balancer, adding standard security headers.
+      const appDistribution = new cloudfront.Distribution(this, 'AppDistribution', {
+        defaultBehavior: {
+          origin: new origins.LoadBalancerV2Origin(service.loadBalancer, {
+            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+          }),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
+        },
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      });
+      appUrl = `https://${appDistribution.distributionDomainName}`;
+    }
 
     new cdk.CfnOutput(this, 'AppUrl', {
-      value: `https://${appDistribution.distributionDomainName}`,
-      description: 'HTTPS URL of the containerised Astro app',
+      value: appUrl,
+      description: 'Public URL of the containerised Astro app',
     });
     new cdk.CfnOutput(this, 'ServiceUrl', {
-      value: `http://${service.loadBalancer.loadBalancerDnsName}`,
+      value: serviceUrl,
       description: 'Load balancer URL (HTTP) used for smoke tests',
     });
     new cdk.CfnOutput(this, 'ClusterName', { value: cluster.clusterName });

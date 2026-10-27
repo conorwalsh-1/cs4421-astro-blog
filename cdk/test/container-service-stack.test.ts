@@ -3,10 +3,10 @@ import { Template } from 'aws-cdk-lib/assertions';
 import { ContainerRegistryStack } from '../lib/container-registry-stack';
 import { ContainerServiceStack } from '../lib/container-service-stack';
 
-function synth() {
+function synth(props: { useCloudFront?: boolean } = {}) {
   const app = new cdk.App();
   const registry = new ContainerRegistryStack(app, 'MyRegistryStack');
-  const stack = new ContainerServiceStack(app, 'MyServiceStack', { repository: registry.repository });
+  const stack = new ContainerServiceStack(app, 'MyServiceStack', { repository: registry.repository, ...props });
   return Template.fromStack(stack);
 }
 
@@ -50,4 +50,13 @@ test('serves the app over HTTPS through CloudFront', () => {
     DistributionConfig: { DefaultCacheBehavior: { ViewerProtocolPolicy: 'redirect-to-https' } },
   });
   template.hasOutput('AppUrl', {});
+});
+
+test('without CloudFront, serves the app straight from the load balancer', () => {
+  const template = synth({ useCloudFront: false });
+
+  template.resourceCountIs('AWS::CloudFront::Distribution', 0);
+  template.resourceCountIs('AWS::ECS::Service', 1);
+  const appUrl = template.findOutputs('AppUrl').AppUrl.Value;
+  expect(appUrl).toEqual(template.findOutputs('ServiceUrl').ServiceUrl.Value);
 });
