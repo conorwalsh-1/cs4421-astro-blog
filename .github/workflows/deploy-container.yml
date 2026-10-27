@@ -11,6 +11,8 @@ concurrency:
 
 env:
   AWS_REGION: us-east-1
+  # CloudFront needs a verified AWS account. Set the repository variable USE_CLOUDFRONT
+  # to 'true' once it is; until then the app is served from the load balancer.
   ECR_REPOSITORY: astro-blog
 
 jobs:
@@ -46,7 +48,7 @@ jobs:
 
       - name: Ensure ECR Repository Exists
         working-directory: cdk
-        run: npx cdk deploy ContainerRegistryStack --require-approval never
+        run: npx cdk deploy ContainerRegistryStack --require-approval never -c cloudfront=${{ vars.USE_CLOUDFRONT || 'false' }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -64,7 +66,7 @@ jobs:
 
       - name: Deploy ECS Infrastructure
         working-directory: cdk
-        run: npx cdk deploy ContainerServiceStack --require-approval never --outputs-file outputs.json
+        run: npx cdk deploy ContainerServiceStack --require-approval never -c cloudfront=${{ vars.USE_CLOUDFRONT || 'false' }} --outputs-file outputs.json
 
       - name: Roll Out New Image (zero-downtime rolling update)
         run: |

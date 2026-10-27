@@ -9,9 +9,19 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 // With the Node adapter (Week 5) Astro writes prerendered pages to dist/client.
 const SITE_DIST = path.resolve(__dirname, '../../dist/client');
 
+export interface StaticSiteStackProps extends cdk.StackProps {
+  /** Serve through CloudFront (default). Without it the bucket hosts the site itself, over HTTP. */
+  useCloudFront?: boolean;
+}
+
 export class StaticSiteStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+  constructor(scope: cdk.App, id: string, props?: StaticSiteStackProps) {
     super(scope, id, props);
+
+    if (props?.useCloudFront === false) {
+      this.websiteBucket();
+      return;
+    }
 
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -59,6 +69,33 @@ function handler(event) {
     new cdk.CfnOutput(this, 'SiteUrl', {
       value: `https://${distribution.distributionDomainName}`,
       description: 'HTTPS URL for the deployed static site',
+    });
+  }
+
+  /** S3 static website hosting: no CDN, HTTPS or security headers, but no account verification needed. */
+  private websiteBucket() {
+    const siteBucket = new s3.Bucket(this, 'SiteBucket', {
+      websiteIndexDocument: 'index.html', // also serves /blog/ from blog/index.html
+      // Only a bucket policy granting public reads; ACLs stay blocked.
+      publicReadAccess: true,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: true,
+        ignorePublicAcls: true,
+        blockPublicPolicy: false,
+        restrictPublicBuckets: false,
+      }),
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    new s3deploy.BucketDeployment(this, 'DeploySite', {
+      sources: [s3deploy.Source.asset(SITE_DIST)],
+      destinationBucket: siteBucket,
+    });
+
+    new cdk.CfnOutput(this, 'SiteUrl', {
+      value: siteBucket.bucketWebsiteUrl,
+      description: 'HTTP URL of the S3-hosted static site',
     });
   }
 }
