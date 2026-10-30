@@ -19,4 +19,6 @@ new StaticSiteStack(app, 'StaticSiteStack', { env, useCloudFront });
 const registry = new ContainerRegistryStack(app, 'ContainerRegistryStack', { env });
 
 // Week 7: ECS Fargate service, load balancer and CloudWatch alarms.
-new ContainerServiceStack(app, 'ContainerServiceStack', { env, repository: registry.repository, useCloudFront });
+// The CD pipeline passes `-c imageTag=<commit SHA>` so every release (and rollback) pins one image.
+const imageTag: string | undefined = app.node.tryGetContext('imageTag');
+new ContainerServiceStack(app, 'ContainerServiceStack', { env, repository: registry.repository, useCloudFront, imageTag });
