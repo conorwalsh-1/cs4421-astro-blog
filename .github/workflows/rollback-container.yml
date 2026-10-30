@@ -1,12 +1,18 @@
 name: Rollback Container
 
-# Rollback Drill 2: point `latest` back at a previous, known-good image and redeploy.
+# Rollback Drill 2: redeploy a previous, known-good image by its commit SHA.
+# Every release pins its own image tag, so this is an ordinary CDK deployment of an older
+# image: the task definition, CloudFormation and the running service all agree afterwards.
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Known-good image tag (commit SHA) already in ECR'
+        description: 'Known-good image tag (full commit SHA) already in ECR'
         required: true
+
+concurrency:
+  group: container-deployment
+  cancel-in-progress: false
 
 env:
   AWS_REGION: us-east-1
@@ -16,6 +22,32 @@ jobs:
   rollback:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate Image Tag
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if ! [[ "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "image_tag must be a full 40-character commit SHA" && exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            cdk/package-lock.json
+
+      # The CDK app also defines StaticSiteStack, which needs dist/client to synthesize.
+      - name: Build Astro Site
+        run: npm ci && npm run build
+
+      - name: Install CDK Dependencies
+        run: npm ci --prefix cdk
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -23,25 +55,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Retag Known-Good Image as latest
+      - name: Check the Image Exists in ECR
         env:
           IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
-          MANIFEST=$(aws ecr batch-get-image --repository-name "$ECR_REPOSITORY" \
-            --image-ids imageTag="$IMAGE_TAG" --query 'images[0].imageManifest' --output text)
-          if [ -z "$MANIFEST" ] || [ "$MANIFEST" = "None" ]; then
-            echo "Image tag $IMAGE_TAG not found in $ECR_REPOSITORY" && exit 1
-          fi
-          aws ecr put-image --repository-name "$ECR_REPOSITORY" --image-tag latest \
-            --image-manifest "$MANIFEST" > /dev/null || echo "latest already points at $IMAGE_TAG"
+          aws ecr describe-images --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" > /dev/null \
+            || { echo "Image tag $IMAGE_TAG not found in $ECR_REPOSITORY" && exit 1; }
 
-      - name: Redeploy Service
+      - name: Deploy the Known-Good Image
+        working-directory: cdk
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          USE_CLOUDFRONT: ${{ vars.USE_CLOUDFRONT || 'false' }}
         run: |
-          STACK=ContainerServiceStack
-          CLUSTER=$(aws cloudformation describe-stacks --stack-name $STACK \
-            --query "Stacks[0].Outputs[?OutputKey=='ClusterName'].OutputValue" --output text)
-          SERVICE=$(aws cloudformation describe-stacks --stack-name $STACK \
-            --query "Stacks[0].Outputs[?OutputKey=='ServiceName'].OutputValue" --output text)
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment > /dev/null
+          npx cdk deploy ContainerServiceStack --require-approval never \
+            -c cloudfront="$USE_CLOUDFRONT" -c imageTag="$IMAGE_TAG" --outputs-file outputs.json
+
+      - name: Wait for the Rolling Update and Smoke Test
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          CLUSTER=$(jq -r '.ContainerServiceStack.ClusterName' cdk/outputs.json)
+          SERVICE=$(jq -r '.ContainerServiceStack.ServiceName' cdk/outputs.json)
           aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
-          echo "Rolled back to ${{ inputs.image_tag }}" >> "$GITHUB_STEP_SUMMARY"
+          URL=$(jq -r '.ContainerServiceStack.ServiceUrl' cdk/outputs.json)
+          curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "$URL/api/health"
+          echo "Rolled back to $IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
