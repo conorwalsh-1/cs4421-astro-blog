@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { ContainerRegistryStack } from '../lib/container-registry-stack';
 import { ContainerServiceStack } from '../lib/container-service-stack';
 
-function synth(props: { useCloudFront?: boolean } = {}) {
+function synth(props: { useCloudFront?: boolean; imageTag?: string } = {}) {
   const app = new cdk.App();
   const registry = new ContainerRegistryStack(app, 'MyRegistryStack');
   const stack = new ContainerServiceStack(app, 'MyServiceStack', { repository: registry.repository, ...props });
@@ -59,4 +59,14 @@ test('without CloudFront, serves the app straight from the load balancer', () =>
   template.resourceCountIs('AWS::ECS::Service', 1);
   const appUrl = template.findOutputs('AppUrl').AppUrl.Value;
   expect(appUrl).toEqual(template.findOutputs('ServiceUrl').ServiceUrl.Value);
+});
+
+test('pins the task definition to the release image tag, so a rollback runs the previous image', () => {
+  const template = synth({ imageTag: 'abc1234' });
+
+  template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+    ContainerDefinitions: [
+      Match.objectLike({ Image: { 'Fn::Join': ['', Match.arrayWith([Match.stringLikeRegexp(':abc1234$')])] } }),
+    ],
+  });
 });

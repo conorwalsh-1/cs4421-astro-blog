@@ -10,7 +10,11 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 
 export interface ContainerServiceStackProps extends cdk.StackProps {
   repository: ecr.IRepository;
-  /** Image tag the service runs; the CD pipeline moves `latest` and forces a new deployment. */
+  /**
+   * Image tag the service runs. The CD pipeline passes the commit SHA, so each release is a new
+   * task definition revision pinned to an immutable image, and rolling back to the previous
+   * revision really runs the previous image. `latest` is only the default for local synths.
+   */
   imageTag?: string;
   /** Put CloudFront (HTTPS) in front of the load balancer (default). Without it the app is served over HTTP. */
   useCloudFront?: boolean;

@@ -64,15 +64,16 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # Pins the task definition to this commit's image, so each release is its own revision
+      # and the circuit breaker's rollback (or Rollback Container) runs the previous image.
       - name: Deploy ECS Infrastructure
         working-directory: cdk
-        run: npx cdk deploy ContainerServiceStack --require-approval never -c cloudfront=${{ vars.USE_CLOUDFRONT || 'false' }} --outputs-file outputs.json
+        run: npx cdk deploy ContainerServiceStack --require-approval never -c cloudfront=${{ vars.USE_CLOUDFRONT || 'false' }} -c imageTag=${{ github.sha }} --outputs-file outputs.json
 
-      - name: Roll Out New Image (zero-downtime rolling update)
+      - name: Wait for the Rolling Update
         run: |
           CLUSTER=$(jq -r '.ContainerServiceStack.ClusterName' cdk/outputs.json)
           SERVICE=$(jq -r '.ContainerServiceStack.ServiceName' cdk/outputs.json)
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" --force-new-deployment > /dev/null
           aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
 
       - name: Smoke Test /api/health
