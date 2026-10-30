@@ -30,7 +30,7 @@ jobs:
             echo "image_tag must be a full 40-character commit SHA" && exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js Runtime
         uses: actions/setup-node@v4
